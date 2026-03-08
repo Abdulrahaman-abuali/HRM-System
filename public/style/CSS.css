@@ -1,0 +1,2053 @@
+/* =========================
+   الأساسيات العامة
+   ========================= */
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html {
+    font-size: 16px;
+}
+
+body {
+    margin: 0;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    background: #f5f5f5;
+    color: #1f2933;
+    line-height: 1.6;
+    direction: rtl;
+}
+
+/* روابط عامة */
+
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* حاويات */
+
+.layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+.main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.main-content {
+    padding: 1.5rem 1.5rem 2.5rem;
+}
+
+/* عناوين وصفحة */
+
+.page-title {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #111827;
+}
+
+.page-subtitle {
+    margin-top: 0.25rem;
+    font-size: 0.9rem;
+    color: #6b7280;
+}
+
+/* أقسام عامة */
+
+.section {
+    margin-bottom: 1.5rem;
+}
+
+.section-header {
+    margin-bottom: 0.75rem;
+}
+
+.section-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #111827;
+}
+
+/* شبكة عامة */
+
+.grid {
+    display: grid;
+    gap: 1.25rem;
+}
+
+.grid-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.grid-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.grid-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+/* =========================
+   الشريط الجانبي
+   ========================= */
+
+.sidebar {
+    width: 260px;
+    background: linear-gradient(180deg, #667eea, #764ba2);
+    color: #f9fafb;
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar-header {
+    padding: 1.25rem 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.sidebar-logo {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.sidebar-logo-mark {
+    width: 32px;
+    height: 32px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.9rem;
+}
+
+.sidebar-logo-text {
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.sidebar-nav {
+    flex: 1;
+    padding: 0.75rem 0.5rem;
+    overflow-y: auto;
+}
+
+.nav-menu {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.nav-item {
+    margin-bottom: 0.25rem;
+}
+
+.nav-link {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.55rem 0.75rem;
+    border-radius: 0.5rem;
+    font-size: 0.9rem;
+    color: #e5e7eb;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.nav-link:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: #ffffff;
+    text-decoration: none;
+}
+
+.nav-link-active {
+    background: #ffffff;
+    color: #4c51bf;
+    font-weight: 600;
+}
+
+.nav-icon {
+    font-size: 1.05rem;
+}
+
+.nav-text {
+    flex: 1;
+}
+
+.sidebar-footer {
+    padding: 0.75rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* =========================
+   الهيدر العلوي
+   ========================= */
+
+.main-header {
+    padding: 1rem 1.5rem 0.75rem;
+    border-bottom: 1px solid #e5e7eb;
+    background: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.header-left {
+    flex: 1;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.header-date-pill {
+    padding: 0.5rem 0.9rem;
+    border-radius: 999px;
+    background: #eef2ff;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.header-date-label {
+    font-size: 0.75rem;
+    color: #4b5563;
+}
+
+.header-date-value {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #111827;
+}
+
+.header-user {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    position: relative;
+}
+
+.header-user-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+}
+
+.header-user-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.header-user-name {
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.header-user-role {
+    font-size: 0.75rem;
+    color: #6b7280;
+}
+
+.header-notifications-badge {
+    position: absolute;
+    top: -0.25rem;
+    left: -0.25rem;
+    min-width: 18px;
+    height: 18px;
+    border-radius: 999px;
+    background: #ef4444;
+    color: #ffffff;
+    font-size: 0.7rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* =========================
+   الكروت العامة
+   ========================= */
+
+.card {
+    background: #ffffff;
+    border-radius: 0.75rem;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.card-header {
+    padding: 0.9rem 1rem 0.75rem;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.75rem;
+}
+
+.card-header-main {
+    flex: 1;
+}
+
+.card-title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #111827;
+}
+
+.card-subtitle {
+    margin-top: 0.25rem;
+    font-size: 0.8rem;
+    color: #6b7280;
+}
+
+.card-header-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.card-body {
+    padding: 0.9rem 1rem 1rem;
+}
+
+.card-footer {
+    padding: 0.75rem 1rem 0.9rem;
+    border-top: 1px solid #e5e7eb;
+}
+
+.card-footer-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+/* =========================
+   الأزرار
+   ========================= */
+
+.btn {
+    border: none;
+    border-radius: 999px;
+    padding: 0.45rem 0.9rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    background: #e5e7eb;
+    color: #111827;
+}
+
+.btn:hover {
+    background: #d1d5db;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    color: #ffffff;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #4338ca, #6d28d9);
+}
+
+.btn-outline {
+    background: transparent;
+    border: 1px solid #cbd5e1;
+    color: #111827;
+}
+
+.btn-outline:hover {
+    background: #e5e7eb;
+}
+
+.btn-ghost {
+    background: transparent;
+    color: #f9fafb;
+    border-radius: 0.5rem;
+}
+
+.btn-ghost:hover {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.btn-danger {
+    background: #ef4444;
+    color: #ffffff;
+}
+
+.btn-danger:hover {
+    background: #dc2626;
+}
+
+.btn-sm {
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+}
+
+.btn-block {
+    width: 100%;
+}
+
+.btn-logout {
+    width: 100%;
+    justify-content: flex-start;
+}
+
+/* =========================
+   النماذج / الفورم
+   ========================= */
+
+.form-group {
+    margin-bottom: 0.75rem;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 0.25rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #374151;
+}
+
+.form-control,
+select.form-control,
+textarea.form-control {
+    width: 100%;
+    border-radius: 0.5rem;
+    border: 1px solid #d1d5db;
+    padding: 0.5rem 0.65rem;
+    font-size: 0.85rem;
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    background: #ffffff;
+}
+
+.form-control:focus,
+select.form-control:focus,
+textarea.form-control:focus {
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 1px rgba(79, 70, 229, 0.15);
+}
+
+.form-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.form-row-between {
+    justify-content: space-between;
+}
+
+.checkbox-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.8rem;
+    cursor: pointer;
+}
+
+.checkbox-input {
+    width: 14px;
+    height: 14px;
+}
+
+.checkbox-text {
+    color: #374151;
+}
+
+.form-actions {
+    margin-top: 0.75rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+/* =========================
+   البادجات / العلامات
+   ========================= */
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.1rem 0.5rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.badge-success {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.badge-warning {
+    background: #fef9c3;
+    color: #92400e;
+}
+
+.badge-danger {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.badge-info {
+    background: #e0f2fe;
+    color: #075985;
+}
+
+/* أداء */
+
+.badge-performance {
+    padding-inline: 0.7rem;
+}
+
+.badge-performance-excellent {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.badge-performance-very-good {
+    background: #e0f2fe;
+    color: #0369a1;
+}
+
+.badge-performance-acceptable {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.badge-performance-weak {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+/* إشعارات */
+
+.badge-notification {
+    font-size: 0.7rem;
+}
+
+.badge-notification-important {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.badge-notification-system {
+    background: #e0f2fe;
+    color: #075985;
+}
+
+.badge-notification-reminder {
+    background: #fef9c3;
+    color: #92400e;
+}
+
+.badge-notification-info {
+    background: #e5e7eb;
+    color: #111827;
+}
+
+/* أدوار */
+
+.role-badge {
+    padding: 0.1rem 0.55rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.role-badge-super-admin {
+    background: #111827;
+    color: #f9fafb;
+}
+
+.role-badge-hr {
+    background: #f97316;
+    color: #fff7ed;
+}
+
+.role-badge-manager {
+    background: #0ea5e9;
+    color: #ecfeff;
+}
+
+.role-badge-employee {
+    background: #e5e7eb;
+    color: #111827;
+}
+
+/* =========================
+   الجداول
+   ========================= */
+
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+}
+
+.table thead {
+    background: #f3f4f6;
+}
+
+.table th,
+.table td {
+    padding: 0.55rem 0.6rem;
+    text-align: right;
+    border-bottom: 1px solid #e5e7eb;
+    white-space: nowrap;
+}
+
+.table th {
+    font-weight: 600;
+    font-size: 0.8rem;
+    color: #374151;
+}
+
+.table-hover tbody tr:hover {
+    background: #f9fafb;
+}
+
+/* صفوف مميزة */
+
+.attendance-row-today {
+    background: #eff6ff;
+}
+
+/* =========================
+   الإحصائيات / Stat Cards
+   ========================= */
+
+.section-stats {
+    margin-bottom: 1.5rem;
+}
+
+.stats-grid {
+    align-items: stretch;
+}
+
+.stat-card {
+    min-height: 120px;
+}
+
+.stat-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.5rem;
+    margin-bottom: 0.4rem;
+}
+
+.stat-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #111827;
+}
+
+.stat-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+}
+
+.stat-icon-primary {
+    background: #eef2ff;
+    color: #4f46e5;
+}
+
+.stat-icon-success {
+    background: #dcfce7;
+    color: #16a34a;
+}
+
+.stat-icon-warning {
+    background: #fef9c3;
+    color: #f59e0b;
+}
+
+.stat-icon-info {
+    background: #e0f2fe;
+    color: #0284c7;
+}
+
+.stat-icon-danger {
+    background: #fee2e2;
+    color: #ef4444;
+}
+
+.stat-card-body {
+    margin-top: 0.25rem;
+}
+
+.stat-value {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #111827;
+}
+
+.stat-caption {
+    font-size: 0.8rem;
+    color: #6b7280;
+}
+
+/* =========================
+   القوائم العامة / Lists
+   ========================= */
+
+.list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.list-item {
+    padding: 0.55rem 0;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.list-main {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.15rem;
+}
+
+.list-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.list-meta {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+    color: #6b7280;
+}
+
+.list-text {
+    white-space: nowrap;
+}
+
+.list-date {
+    white-space: nowrap;
+}
+
+.list-actions {
+    display: flex;
+    gap: 0.4rem;
+    margin-top: 0.35rem;
+}
+
+/* =========================
+   النشاط / Activity
+   ========================= */
+
+.activity-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.activity-item {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.45rem 0;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.activity-icon {
+    width: 26px;
+    height: 26px;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+}
+
+.activity-icon-success {
+    background: #dcfce7;
+    color: #16a34a;
+}
+
+.activity-icon-info {
+    background: #e0f2fe;
+    color: #0284c7;
+}
+
+.activity-icon-warning {
+    background: #fef9c3;
+    color: #f59e0b;
+}
+
+.activity-icon-primary {
+    background: #eef2ff;
+    color: #4f46e5;
+}
+
+.activity-content {
+    flex: 1;
+}
+
+.activity-text {
+    margin: 0;
+    font-size: 0.8rem;
+}
+
+.activity-strong {
+    font-weight: 600;
+}
+
+.activity-meta {
+    display: block;
+    font-size: 0.7rem;
+    color: #9ca3af;
+    margin-top: 0.15rem;
+}
+
+/* =========================
+   المهام / Tasks
+   ========================= */
+
+.task-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.task-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.4rem 0;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.task-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.8rem;
+}
+
+.task-input {
+    width: 14px;
+    height: 14px;
+}
+
+.task-label {
+    cursor: pointer;
+}
+
+.task-badge {
+    font-size: 0.7rem;
+    padding: 0.1rem 0.45rem;
+    border-radius: 999px;
+    white-space: nowrap;
+}
+
+.task-badge-high {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.task-badge-medium {
+    background: #fef9c3;
+    color: #92400e;
+}
+
+.task-badge-low {
+    background: #dcfce7;
+    color: #166534;
+}
+
+/* =========================
+   صفحة تسجيل الدخول
+   ========================= */
+
+.auth-page {
+    display: flex;
+    min-height: 100vh;
+    background: radial-gradient(circle at top, #eef2ff, #e5e7eb);
+    align-items: center;
+    justify-content: center;
+}
+
+.auth-wrapper {
+    width: 100%;
+    max-width: 420px;
+    padding: 1rem;
+}
+
+.auth-card {
+    background: #ffffff;
+    border-radius: 0.75rem;
+    box-shadow: 0 10px 40px rgba(15, 23, 42, 0.18);
+    padding: 1.5rem 1.5rem 1rem;
+}
+
+.auth-header {
+    text-align: center;
+    margin-bottom: 1.25rem;
+}
+
+.brand-logo {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 0.5rem;
+}
+
+.brand-logo-mark {
+    width: 40px;
+    height: 40px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+}
+
+.brand-title {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #111827;
+}
+
+.brand-subtitle {
+    margin-top: 0.1rem;
+    font-size: 0.8rem;
+    color: #6b7280;
+}
+
+.auth-form {
+    margin-top: 0.75rem;
+}
+
+.link-forgot-password {
+    font-size: 0.8rem;
+    color: #4f46e5;
+}
+
+.link-forgot-password:hover {
+    text-decoration: underline;
+}
+
+.auth-footer {
+    margin-top: 1rem;
+    text-align: center;
+}
+
+.auth-footer-text {
+    font-size: 0.75rem;
+    color: #9ca3af;
+}
+
+/* =========================
+   صفحة الموظفين / Employee List
+   ========================= */
+
+.page-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.search-bar {
+    display: flex;
+    gap: 0.5rem;
+    flex: 1;
+    max-width: 320px;
+}
+
+.employee-table .action-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+}
+
+/* =========================
+   تفاصيل الموظف
+   ========================= */
+
+.employee-profile {
+    padding-bottom: 0.8rem;
+}
+
+.employee-header {
+    padding: 0.9rem 1rem 0.75rem;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.employee-header-main {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.employee-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+.employee-basic-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.employee-name {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 700;
+}
+
+.employee-position {
+    font-size: 0.85rem;
+    color: #6b7280;
+    margin: 0.1rem 0 0.05rem;
+}
+
+.employee-id {
+    font-size: 0.78rem;
+    color: #9ca3af;
+    margin: 0;
+}
+
+.employee-id-value {
+    font-weight: 600;
+}
+
+.employee-header-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.25rem;
+}
+
+.employee-status {
+    text-align: left;
+}
+
+.employee-dates {
+    font-size: 0.78rem;
+    color: #6b7280;
+}
+
+.employee-date-label {
+    font-weight: 500;
+}
+
+.employee-info-grid {
+    padding: 0.9rem 1rem 0.75rem;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.info-section {
+    border-radius: 0.75rem;
+    border: 1px solid #e5e7eb;
+    padding: 0.75rem 0.8rem;
+}
+
+.info-section-header {
+    margin-bottom: 0.4rem;
+}
+
+.info-section-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.info-section-body {
+    font-size: 0.8rem;
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-bottom: 0.25rem;
+}
+
+.info-label {
+    color: #6b7280;
+}
+
+.info-value {
+    font-weight: 500;
+    color: #111827;
+}
+
+.info-value-strong {
+    font-weight: 700;
+    color: #111827;
+}
+
+.employee-actions {
+    padding: 0.75rem 1rem 0.9rem;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+/* =========================
+   الحضور والانصراف
+   ========================= */
+
+.attendance-header {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: stretch;
+}
+
+.attendance-datetime-card {
+    min-width: 220px;
+    max-width: 260px;
+    border-radius: 0.75rem;
+    background: #111827;
+    color: #f9fafb;
+    padding: 0.8rem 0.9rem;
+}
+
+.attendance-datetime-header {
+    font-size: 0.8rem;
+    color: #9ca3af;
+    margin-bottom: 0.25rem;
+}
+
+.attendance-datetime-label {
+    font-weight: 500;
+}
+
+.attendance-datetime-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+}
+
+.attendance-date {
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.attendance-time {
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.attendance-controls {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.attendance-filters {
+    align-items: flex-end;
+}
+
+.attendance-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+/* =========================
+   الإجازات
+   ========================= */
+
+.leaves-header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.leaves-filters {
+    align-items: flex-end;
+}
+
+.leaves-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+/* =========================
+   الرواتب
+   ========================= */
+
+.month-selector {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.month-nav-btn {
+    min-width: 110px;
+}
+
+.month-current {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.month-label {
+    font-size: 0.85rem;
+    color: #374151;
+}
+
+.month-select {
+    min-width: 180px;
+}
+
+.payroll-header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.payroll-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.salary-amount {
+    font-family: inherit;
+}
+
+.salary-amount-net {
+    font-weight: 700;
+}
+
+/* =========================
+   تقييم الأداء
+   ========================= */
+
+.performance-header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.performance-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.progress {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.progress-bar {
+    flex: 1;
+    height: 0.5rem;
+    border-radius: 999px;
+    background: #e5e7eb;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #22c55e, #16a34a);
+}
+
+.progress-90 {
+    width: 90%;
+}
+
+.progress-85 {
+    width: 85%;
+}
+
+.progress-65 {
+    width: 65%;
+}
+
+.progress-45 {
+    width: 45%;
+}
+
+.progress-value {
+    font-size: 0.75rem;
+    color: #111827;
+}
+
+/* =========================
+   التقارير
+   ========================= */
+
+.report-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.report-meta-list {
+    list-style: none;
+    padding: 0;
+    margin: 0.25rem 0 0;
+    font-size: 0.78rem;
+    color: #6b7280;
+}
+
+.report-meta-item {
+    margin-bottom: 0.2rem;
+}
+
+/* تقارير مخصصة */
+
+.recent-reports-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+/* =========================
+   الإشعارات (صفحة الإدارة)
+   ========================= */
+
+.notifications-header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.notifications-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.notifications-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.notification-item {
+    padding: 0.6rem 0;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.notification-unread {
+    background: #f9fafb;
+}
+
+.notification-main {
+    display: flex;
+    gap: 0.6rem;
+}
+
+.notification-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+}
+
+.notification-icon-important {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.notification-icon-system {
+    background: #e0f2fe;
+    color: #075985;
+}
+
+.notification-icon-reminder {
+    background: #fef9c3;
+    color: #92400e;
+}
+
+.notification-icon-info {
+    background: #e5e7eb;
+    color: #111827;
+}
+
+.notification-content {
+    flex: 1;
+}
+
+.notification-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.1rem;
+}
+
+.notification-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.notification-text {
+    font-size: 0.8rem;
+    margin: 0.1rem 0 0.15rem;
+    color: #4b5563;
+}
+
+.notification-meta {
+    font-size: 0.7rem;
+    color: #9ca3af;
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.notification-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+/* =========================
+   إدارة المستخدمين
+   ========================= */
+
+.users-header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.users-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.user-cell {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.user-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 999px;
+    background: #e5e7eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.user-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.user-name {
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.user-username {
+    font-size: 0.75rem;
+    color: #9ca3af;
+}
+
+/* =========================
+   الملف الشخصي (الإداري)
+   ========================= */
+
+.profile-section {
+    margin-top: 0.5rem;
+}
+
+.profile-grid {
+    align-items: flex-start;
+}
+
+.profile-summary {
+    grid-column: span 1;
+}
+
+.profile-avatar {
+    width: 70px;
+    height: 70px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    color: #ffffff;
+    margin: 0.5rem auto 0.4rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    font-weight: 700;
+}
+
+.profile-name {
+    text-align: center;
+    margin: 0.2rem 0 0.1rem;
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.profile-role {
+    text-align: center;
+    font-size: 0.8rem;
+    color: #6b7280;
+    margin: 0 0 0.6rem;
+}
+
+.profile-meta-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.55rem;
+    margin-bottom: 0.7rem;
+}
+
+.profile-meta-item {
+    background: #f9fafb;
+    border-radius: 0.5rem;
+    padding: 0.4rem 0.5rem;
+}
+
+.profile-meta-label {
+    display: block;
+    font-size: 0.7rem;
+    color: #6b7280;
+}
+
+.profile-meta-value {
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.profile-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: center;
+}
+
+.profile-details {
+    grid-column: span 2;
+}
+
+/* تبويبات */
+
+.profile-tabs-header {
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.card-header-tabs {
+    margin-top: 0.25rem;
+}
+
+.tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+}
+
+.tabs-tab {
+    border: none;
+    border-radius: 999px;
+    padding: 0.3rem 0.7rem;
+    font-size: 0.75rem;
+    background: #e5e7eb;
+    color: #374151;
+    cursor: pointer;
+}
+
+.tabs-tab-active {
+    background: #4f46e5;
+    color: #ffffff;
+}
+
+.tabs-panels {
+    margin-top: 0.75rem;
+}
+
+.tabs-panel {
+    display: none;
+}
+
+.tabs-panel-active {
+    display: block;
+}
+
+/* قوة كلمة المرور */
+
+.password-strength {
+    margin-top: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.password-strength-label {
+    font-size: 0.78rem;
+    color: #4b5563;
+}
+
+.password-strength-bar {
+    flex: 1;
+    height: 0.4rem;
+    border-radius: 999px;
+    background: #e5e7eb;
+    overflow: hidden;
+}
+
+.password-strength-fill {
+    height: 100%;
+    border-radius: inherit;
+}
+
+.password-strength-medium {
+    width: 60%;
+    background: #f97316;
+}
+
+/* جلسات */
+
+.sessions-list {
+    list-style: none;
+    margin: 0.5rem 0 0;
+    padding: 0;
+}
+
+.session-item {
+    padding: 0.4rem 0;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.session-main {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.8rem;
+}
+
+.session-title {
+    font-weight: 600;
+}
+
+.session-meta {
+    font-size: 0.75rem;
+    color: #9ca3af;
+    margin-top: 0.1rem;
+}
+
+.session-actions {
+    margin-top: 0.3rem;
+}
+
+/* إعدادات */
+
+.settings-group {
+    margin-bottom: 0.6rem;
+}
+
+.settings-description {
+    font-size: 0.75rem;
+    color: #6b7280;
+    margin: 0.15rem 0 0;
+}
+
+/* تقسيمات */
+
+.section-divider {
+    border: none;
+    border-top: 1px solid #e5e7eb;
+    margin: 0.9rem 0;
+}
+
+.subsection-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin: 0 0 0.2rem;
+}
+
+.subsection-description {
+    font-size: 0.78rem;
+    color: #6b7280;
+    margin: 0 0 0.4rem;
+}
+
+/* =========================
+   لوحة الموظف / Employee Portal
+   ========================= */
+
+.employee-welcome-section {
+    margin-top: 0.5rem;
+}
+
+.welcome-banner {
+    padding: 0.9rem 1rem;
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    color: #f9fafb;
+}
+
+.welcome-main {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+.welcome-text {
+    max-width: 60%;
+}
+
+.welcome-title {
+    margin: 0 0 0.15rem;
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.welcome-subtitle {
+    margin: 0;
+    font-size: 0.85rem;
+    color: #e5e7eb;
+}
+
+.welcome-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 200px;
+}
+
+.welcome-meta-item {
+    display: flex;
+    flex-direction: column;
+    font-size: 0.78rem;
+}
+
+.welcome-meta-label {
+    color: #e5e7eb;
+}
+
+.welcome-meta-value {
+    font-weight: 600;
+}
+
+.welcome-meta-badge {
+    margin-top: 0.15rem;
+}
+
+/* إحصائيات الموظف */
+
+.employee-stats-section {
+    margin-top: 0.75rem;
+}
+
+.employee-stats-grid {
+    align-items: stretch;
+}
+
+/* لوحة الموظف التفصيلية */
+
+.employee-dashboard-section {
+    margin-top: 0.75rem;
+}
+
+.employee-dashboard-grid {
+    align-items: flex-start;
+}
+
+.employee-leave-card {
+    grid-column: span 1;
+}
+
+.employee-side-card {
+    grid-column: span 1;
+}
+
+.employee-leave-form {
+    margin-bottom: 0.5rem;
+}
+
+.employee-leaves-history {
+    list-style: none;
+    padding: 0;
+    margin: 0.25rem 0 0;
+}
+
+/* إشعارات الموظف */
+
+.employee-notifications-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+/* الملف الشخصي المختصر للموظف */
+
+.employee-mini-profile {
+    margin-top: 0.4rem;
+}
+
+.mini-profile-header {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 0.5rem;
+}
+
+.mini-profile-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 999px;
+    background: #e5e7eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+}
+
+.mini-profile-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.mini-profile-name {
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.mini-profile-role {
+    font-size: 0.78rem;
+    color: #6b7280;
+}
+
+.mini-profile-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem;
+    margin-bottom: 0.6rem;
+}
+
+.mini-profile-item {
+    font-size: 0.78rem;
+}
+
+.mini-profile-label {
+    color: #6b7280;
+    display: block;
+}
+
+.mini-profile-value {
+    font-weight: 500;
+}
+
+.mini-profile-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+/* =========================
+   تقارير مخصصة / تقرير مخصص
+   ========================= */
+
+#customReportModule,
+#customReportFrom,
+#customReportTo,
+#customReportFormat,
+#customReportGrouping,
+#customReportName {
+    /* مغطى من .form-control */
+}
+
+/* =========================
+   فئات تطبيقية عامة
+   ========================= */
+
+.app {
+    background: #f5f5f5;
+}
+
+/* أنواع تطبيقات محددة (يمكن استخدام نفس النمط) */
+
+.app-dashboard,
+.app-employees,
+.app-employee-details,
+.app-attendance,
+.app-leaves,
+.app-payroll,
+.app-performance,
+.app-reports,
+.app-notifications,
+.app-users,
+.app-profile,
+.app-employee-portal {
+    /* متشابهة – لا حاجة لتخصيص إضافي هنا */
+}
+
+/* =========================
+   استجابات / ريسبونسف
+   ========================= */
+
+@media (max-width: 992px) {
+    .layout {
+        flex-direction: column;
+    }
+
+    .sidebar {
+        width: 100%;
+    }
+
+    .main-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .header-right {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .employee-info-grid,
+    .profile-meta-grid,
+    .mini-profile-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .profile-summary,
+    .profile-details {
+        grid-column: span 3;
+    }
+
+    .employee-leave-card,
+    .employee-side-card {
+        grid-column: span 2;
+    }
+}
+
+@media (max-width: 768px) {
+    .grid-4,
+    .grid-3,
+    .grid-2 {
+        grid-template-columns: 1fr;
+    }
+
+    .main-content {
+        padding: 1rem;
+    }
+
+    .welcome-text {
+        max-width: 100%;
+    }
+
+    .attendance-header {
+        flex-direction: column;
+    }
+
+    .attendance-datetime-card {
+        max-width: 100%;
+    }
+
+    .page-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .search-bar {
+        max-width: 100%;
+    }
+
+    .month-selector {
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 480px) {
+    .main-header {
+        padding: 0.75rem 0.75rem 0.6rem;
+    }
+
+    .card-body,
+    .card-header,
+    .card-footer {
+        padding-inline: 0.75rem;
+    }
+
+    .sidebar-header,
+    .sidebar-footer {
+        padding-inline: 0.75rem;
+    }   
+}
