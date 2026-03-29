@@ -1,4 +1,4 @@
-
+@extends('layout.app')
 
 @section('title', 'سجل الحضور والانصراف')
 
