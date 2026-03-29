@@ -8,6 +8,10 @@ use App\Models\User;
 use App\Models\AttendanceRecord;
 use Illuminate\Routing\Controller;
 use App\Models\Salary;
+use App\Models\Notification;
+use App\Models\LeaveRequest;
+use App\Models\Employee;
+use App\Models\ActivityLog;
 
 class PagesController extends Controller
 {
@@ -23,67 +27,103 @@ class PagesController extends Controller
      * معالجة عملية تسجيل الدخول + تسجيل الحضور تلقائياً
      */
     public function login(Request $request)
-    {
-        $credentials = $request->validate([
-            'email' => 'required|email',
-            'password' => 'required',
-        ]);
+{
+    $credentials = $request->validate([
+        'email' => 'required|email',
+        'password' => 'required',
+    ]);
 
-        if (!Auth::attempt($credentials)) {
-            return back()->withErrors(['email' => 'بيانات الدخول غير صحيحة.']);
-        }
-
-        $request->session()->regenerate();
-        $user = Auth::user();
-
-        // تحقق من حالة النشاط (إذا كان لديك حقل is_active)
-        if (isset($user->is_active) && !$user->is_active) {
-            Auth::logout();
-            return back()->withErrors(['email' => 'الحساب غير مفعل.']);
-        }
-
-        // --- منطق تسجيل الحضور التلقائي عند الدخول ---
-        $employee = $user->employee;
-        if ($employee) {
-            $today = now()->toDateString();
-
-            // جلب سجل اليوم أو إنشاؤه إذا لم يوجد
-            $record = AttendanceRecord::firstOrCreate([
-                'employee_id' => $employee->id,
-                'date'        => $today,
-            ]);
-
-            // تحديث وقت الحضور فقط إذا كانت المرة الأولى للدخول اليوم
-            if (!$record->check_in) {
-                $record->update([
-                    'check_in' => now()->format('H:i:s')
-                ]);
-            }
-        }
-
-        // التوجيه بناءً على الدور (Role)
-        $roleName = $user->role?->name;
-
-        if ($roleName === 'مدير النظام') {
-            return redirect()->route('dashbord');
-        }
-
-        if ($roleName === 'موظف') {
-            return redirect()->route('employee.dashboard');
-        }
-
-        // في حال عدم وجود دور معروف
-        Auth::logout();
-        return back()->withErrors(['email' => 'عفواً، لا يمتلك هذا الحساب صلاحيات الوصول للنظام.']);
+    if (!Auth::attempt($credentials)) {
+        return back()->withErrors(['email' => 'بيانات الدخول غير صحيحة.']);
     }
 
+    $request->session()->regenerate();
+    $user = Auth::user();
+
+    // تحقق من حالة النشاط
+    if (isset($user->is_active) && !$user->is_active) {
+        Auth::logout();
+        return back()->withErrors(['email' => 'الحساب غير مفعل.']);
+    }
+
+    // التوجيه بناءً على الدور (Role)
+    $roleName = $user->role?->name;
+
+    if ($roleName === 'مدير النظام') {
+        return redirect()->route('dashbord');
+    }
+
+    if ($user->role->name === 'مدير القسم') {
+    return redirect()->route('employees.dashboard_mangers'); // أو الصفحة التي تريدها أن تكون واجهته الرئيسية
+}
+
+    if ($roleName === 'موظف') {
+        return redirect()->route('employee.dashboard');
+    }
+
+    // في حال عدم وجود دور معروف
+    Auth::logout();
+    return back()->withErrors(['email' => 'عفواً، لا يمتلك هذا الحساب صلاحيات الوصول للنظام.']);
+}
     /**
      * لوحة تحكم المدير
      */
     public function showDashboardPage()
-    {
-        return view("dashbord.index");
+{
+    $user = Auth::user();
+
+    $role = $user->role?->name;
+    // إصلاح: عد الإشعارات غير المقروءة للمستخدم الحالي
+    $unreadNotificationsCount = \App\Models\Notification::where('notifiable_id', $user->id)
+        ->where('notifiable_type', get_class($user))
+        ->where('is_read', 0)
+        ->count();
+
+    // 🛡️ إذا كان المستخدم "مدير قسم"
+    if ($role === 'مدير القسم') {
+        $deptId = $user->employee->department_id;
+
+        $stats = [
+            'total_employees'      => Employee::where('department_id', $deptId)->count(),
+            'today_attendance'     => AttendanceRecord::whereDate('date', today())
+                                        ->whereHas('employee', fn($q) => $q->where('department_id', $deptId))
+                                        ->count(),
+            'pending_leaves'       => LeaveRequest::where('status', 'pending')
+                                        ->whereHas('employee', fn($q) => $q->where('department_id', $deptId))
+                                        ->count(),
+            'unread_notifications' => $unreadNotificationsCount,
+        ];
+
+        // جلب نشاطات وحضور القسم فقط
+        $todayAttendance = AttendanceRecord::with('employee')
+                            ->whereDate('date', today())
+                            ->whereHas('employee', fn($q) => $q->where('department_id', $deptId))
+                            ->take(5)->get();
+
+        $latestLeaves = LeaveRequest::with('employee')
+                            ->whereHas('employee', fn($q) => $q->where('department_id', $deptId))
+                            ->latest()->take(3)->get();
+
+        // السجلات والنشاطات (يمكنك فلترتها أيضاً حسب القسم إذا كان جدول النشاطات يدعم ذلك)
+        $activities = \App\Models\ActivityLog::latest()->take(5)->get();
+
+        return view('employees.dashboard_mangers', compact('stats', 'todayAttendance', 'activities', 'latestLeaves'));
     }
+
+    // 👑 إحصائيات مدير النظام (التي كانت لديك مسبقاً)
+    $stats = [
+        'total_employees'      => Employee::count(),
+        'today_attendance'     => AttendanceRecord::whereDate('date', today())->count(),
+        'pending_leaves'       => LeaveRequest::where('status', 'pending')->count(),
+        'unread_notifications' => $unreadNotificationsCount,
+    ];
+
+    $todayAttendance = AttendanceRecord::with('employee')->whereDate('date', today())->take(5)->get();
+    $activities = \App\Models\ActivityLog::latest()->take(5)->get();
+    $latestLeaves = LeaveRequest::with('employee')->latest()->take(3)->get();
+
+    return view('dashbord.index', compact('stats', 'todayAttendance', 'activities', 'latestLeaves'));
+}
 
     /**
      * لوحة تحكم الموظف
@@ -100,35 +140,60 @@ class PagesController extends Controller
 {
     $user = Auth::user();
     $employee = $user->employee;
+    $role = $user->role?->name;
     $date = $request->input('date', now()->toDateString());
 
     // 1. إذا كان المستخدم موظف (يرى أرشيفه الشخصي فقط)
-    if ($user->role?->name === 'موظف' && $employee) {
-        $records = AttendanceRecord::where('employee_id', $employee->id)
+    if ($role === 'موظف' && $employee) {
+        $records = \App\Models\AttendanceRecord::where('employee_id', $employee->id)
                     ->orderByDesc('date')
                     ->paginate(20);
 
-        // نرسل فقط $records للموظف لضمان عدم ظهور جداول المدير
         return view('dashbord.leave', compact('records', 'date'));
     }
 
-    // 2. إذا كان المستخدم مديراً (يرى حالة اليوم للكل + الأرشيف العام)
-    $employees = \App\Models\Employee::with(['department', 'attendanceRecords' => function($q) use ($date) {
+    /* -----------------------------------------------------------
+       2. إذا كان مديراً (نظام أو قسم)
+    ----------------------------------------------------------- */
+
+    // بناء استعلام الموظفين
+    $employeesQuery = \App\Models\Employee::with(['department', 'attendanceRecords' => function($q) use ($date) {
         $q->where('date', $date);
-    }])->get();
+    }]);
 
-    // جلب الأرشيف العام لكل الموظفين بأسماءهم
-    $allHistory = AttendanceRecord::with('employee')
-                    ->orderByDesc('date')
-                    ->paginate(15);
+    // بناء استعلام الأرشيف
+    $historyQuery = \App\Models\AttendanceRecord::with('employee.department');
 
+    // ✨ إضافة شرط القسم إذا كان المستخدم "مدير قسم"
+    if ($role === 'مدير القسم') {
+        $deptId = $employee->department_id ?? null;
+
+        if ($deptId) {
+            // فلترة الموظفين حسب القسم
+            $employeesQuery->where('department_id', $deptId);
+
+            // فلترة الأرشيف حسب قسم الموظف
+            $historyQuery->whereHas('employee', function($q) use ($deptId) {
+                $q->where('department_id', $deptId);
+            });
+        }
+    }
+
+    // تنفيذ الاستعلامات
+    $employees = $employeesQuery->get();
+    $allHistory = $historyQuery->orderByDesc('date')->paginate(15);
+
+    // حساب الإحصائيات (ستكون دقيقة حسب القسم للمدير، أو شاملة للمدير العام)
     $stats = [
         'total'   => $employees->count(),
         'present' => $employees->filter(fn($e) => $e->attendanceRecords->isNotEmpty())->count(),
         'absent'  => $employees->filter(fn($e) => $e->attendanceRecords->isEmpty())->count(),
     ];
 
-    return view('dashbord.leave', compact('employees', 'allHistory', 'date', 'stats'));
+    $allLeaves = collect([]);
+    $stats = ['pending' => 0, 'approved' => 0, 'rejected' => 0, 'total' => 0];
+
+    return view('dashbord.leave', compact('employees', 'allHistory', 'date', 'stats', 'allLeaves'));
 }
     /**
      * صفحات النظام الأخرى (الإدارة)
@@ -214,7 +279,17 @@ class PagesController extends Controller
 }
     public function showPerformancePage(){ return view('dashbord.performance'); }
     public function showReportsPage()    { return view('dashbord.reports'); }
-    public function showNotificationsPage(){ return view('dashbord.notifications'); }
+    // public function showNotificationsPage()
+    // {
+    //     $stats = [
+    //         'unread' => 0,
+    //         'important' => 0,
+    //         'system' => 0,
+    //         'total' => 0,
+    //      ];
+    //       $notifications = Notification::latest()->get();
+    //     return view('dashbord.notifications', compact('stats','notifications'));
+    // }
 
     public function showUsersPage()
     {
@@ -267,31 +342,98 @@ class PagesController extends Controller
     /**
  * دفع راتب موظف واحد
  */
-    public function paySalary($id)
-    {
-        $salary = \App\Models\Salary::findOrFail($id);
+   public function paySalary($id)
+{
+    // 1. جلب سجل الراتب مع بيانات الموظف والمدير
+    $salary = \App\Models\Salary::findOrFail($id);
+    $employee = $salary->employee;
+    $admin = \App\Models\User::whereHas('role', function($q){
+        $q->where('name', 'مدير النظام');
+    })->first();
+
+    if ($employee) {
+        // أ: إشعار للموظف (كما في الصورة)
+        \App\Models\Notification::create([
+            'user_id' => $employee->user_id,
+            'title'   => 'إيداع راتب 💰',
+            'text'    => 'تم إيداع راتب شهر ' . now()->translatedFormat('F') . ' في حسابك. يمكنك مراجعة القسيمة الآن.',
+            'type'    => 'success',
+            'source'  => 'النظام المالي',
+        ]);
+
+        // ب: إشعار للمدير (باسم الموظف)
+        if ($admin) {
+            \App\Models\Notification::create([
+                'user_id' => $admin->id,
+                'title'   => 'تأكيد صرف راتب ✅',
+                'text'    => 'تم إيداع راتب شهر ' . now()->translatedFormat('F') . ' في حساب الموظف ' . $employee->first_name . ' ' . $employee->last_name,
+                'type'    => 'system',
+                'source'  => 'النظام المالي',
+            ]);
+        }
+    }
+
+    // تحديث حالة الراتب
+    $salary->update([
+        'status' => 'مدفوع',
+        'paid_at' => now()
+    ]);
+
+    return back()->with('success', 'تم تأكيد دفع الراتب بنجاح.');
+}
+
+    /**
+     * دفع جميع رواتب الشهر الظاهر
+     */
+   public function payAllSalaries(Request $request)
+{
+    $date = $request->input('selected_month', now()->format('Y-m'));
+
+    // جلب الرواتب التي لم تُدفع بعد لهذا الشهر
+    $salariesToPay = \App\Models\Salary::where('month', $date)
+        ->where('status', '!=', 'مدفوع')
+        ->with('employee')
+        ->get();
+
+    if ($salariesToPay->isEmpty()) {
+        return back()->with('error', 'لا توجد رواتب مستحقة للدفع لهذا الشهر.');
+    }
+
+    foreach ($salariesToPay as $salary) {
+        // تحديث السجل
         $salary->update([
             'status' => 'مدفوع',
             'paid_at' => now()
         ]);
 
-        return back()->with('success', 'تم تأكيد دفع الراتب بنجاح.');
-    }
-
-    /**
-     * دفع جميع رواتب الشهر الظاهر
-     */
-    public function payAllSalaries(Request $request)
-    {
-        $date = $request->input('selected_month', now()->format('Y-m'));
-
-        $updated = \App\Models\Salary::where('month', $date)
-            ->where('status', '!=', 'مدفوع')
-            ->update([
-                'status' => 'مدفوع',
-                'paid_at' => now()
+        // إرسال إشعار لكل موظف
+        if ($salary->employee) {
+            \App\Models\Notification::create([
+                'user_id' => $salary->employee->user_id,
+                'title'   => 'إيداع راتب 💰',
+                'text'    => 'تم إيداع راتب شهر ' . now()->translatedFormat('F') . ' في حسابك. يمكنك مراجعة القسيمة الآن.',
+                'type'    => 'success',
+                'source'  => 'النظام المالي',
             ]);
-
-        return back()->with('success', "تم دفع رواتب ($updated) موظف بنجاح.");
+        }
     }
+
+    // إرسال إشعار واحد نهائي للمدير
+    $admin = \App\Models\User::whereHas('role', function($q){
+        $q->where('name', 'مدير النظام');
+    })->first();
+
+    if ($admin) {
+        \App\Models\Notification::create([
+            'user_id' => $admin->id,
+            'title'   => 'إتمام صرف الرواتب 📑',
+            'text'    => 'تم إيداع راتب شهر ' . now()->translatedFormat('F') . ' لجميع الموظفين بنجاح.',
+            'type'    => 'success',
+            'source'  => 'النظام المالي',
+        ]);
+    }
+
+    $count = $salariesToPay->count();
+    return back()->with('success', "تم دفع رواتب ($count) موظف بنجاح وإرسال الإشعارات.");
+}
 }

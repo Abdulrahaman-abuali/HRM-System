@@ -5,6 +5,45 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
+/**
+ * @property int $id
+ * @property int $employee_id
+ * @property string $month
+ * @property numeric $basic_salary
+ * @property numeric $housing_percentage
+ * @property numeric $transport_percentage
+ * @property numeric $bonuses
+ * @property numeric $health_percentage
+ * @property numeric $tax_percentage
+ * @property numeric $loan_installments
+ * @property numeric $penalties
+ * @property numeric $net_salary
+ * @property string $status
+ * @property string|null $paid_at
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \App\Models\Employee $employee
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Salary newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Salary newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Salary query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Salary whereBasicSalary($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Salary whereBonuses($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Salary whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Salary whereEmployeeId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Salary whereHealthPercentage($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Salary whereHousingPercentage($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Salary whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Salary whereLoanInstallments($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Salary whereMonth($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Salary whereNetSalary($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Salary wherePaidAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Salary wherePenalties($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Salary whereStatus($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Salary whereTaxPercentage($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Salary whereTransportPercentage($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Salary whereUpdatedAt($value)
+ * @mixin \Eloquent
+ */
 class Salary extends Model
 {
     use HasFactory;

@@ -18,6 +18,7 @@ class JobTitleSeeder extends Seeder
         JobTitle::insert([
             ['name' => 'محاسب'],
             ['name' => 'مبرمج'],
+            ['name' => 'مدير'],
 
         ]);
 

@@ -98,24 +98,30 @@
                                                 @endif
                                             </td>
                                             <td>
-                                                @if($leave->status == 'pending')
-                                                <div class="action-buttons" style="display:flex; gap:5px;">
-                                                    <form action="{{ route('admin.leaves.status', $leave->id) }}" method="POST">
-                                                        @csrf
-                                                        <input type="hidden" name="status" value="approved">
-                                                        <button type="submit" class="btn btn-sm btn-success">موافقة</button>
-                                                    </form>
+    <div class="action-buttons" style="display:flex; gap:5px;">
+        <button type="button"
+                class="btn btn-sm btn-info"
+                onclick="showReason('{{ $leave->employee->first_name }}', '{{ $leave->reason }}')">
+            عرض السبب
+        </button>
 
-                                                    <form action="{{ route('admin.leaves.status', $leave->id) }}" method="POST">
-                                                        @csrf
-                                                        <input type="hidden" name="status" value="rejected">
-                                                        <button type="submit" class="btn btn-sm btn-danger">رفض</button>
-                                                    </form>
-                                                </div>
-                                                @else
-                                                    <span class="text-muted">تمت المعالجة</span>
-                                                @endif
-                                            </td>
+        @if($leave->status == 'pending')
+            <form action="{{ route('admin.leaves.status', $leave->id) }}" method="POST">
+                @csrf
+                <input type="hidden" name="status" value="approved">
+                <button type="submit" class="btn btn-sm btn-success">موافقة</button>
+            </form>
+
+            <form action="{{ route('admin.leaves.status', $leave->id) }}" method="POST">
+                @csrf
+                <input type="hidden" name="status" value="rejected">
+                <button type="submit" class="btn btn-sm btn-danger">رفض</button>
+            </form>
+        @else
+            <span class="text-muted">تمت المعالجة</span>
+        @endif
+    </div>
+</td>
                                         </tr>
                                     @endforeach
                                 </tbody>
@@ -126,4 +132,25 @@
             </section>
         </main>
     </div>
+    @section('script')
+<script>
+    function showReason(name, reason) {
+        // إذا كان السبب فارغاً
+        const message = reason ? reason : "لا يوجد سبب مذكور لهذا الطلب.";
+
+        Swal.fire({
+            title: 'سبب إجازة الموظف: ' + name,
+            text: message,
+            icon: 'info',
+            confirmButtonText: 'إغلاق',
+            confirmButtonColor: '#3085d6',
+            background: '#fff',
+            customClass: {
+                title: 'text-right',
+                content: 'text-right'
+            }
+        });
+    }
+</script>
+@endsection
 @endsection

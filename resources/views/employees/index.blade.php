@@ -5,26 +5,27 @@
 @section('content')
 <main class="main-content">
 
-    <!-- شريط البحث والإجراءات -->
     <section class="section">
         <div class="page-actions" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <!-- شريط البحث -->
             <form action="{{ route('employees.index') }}" method="GET" class="search-bar" style="display: flex; gap: 10px;">
                 <input type="text" name="search" class="form-control" placeholder="ابحث عن موظف..." value="{{ request('search') }}">
                 <button type="submit" class="btn btn-primary">بحث</button>
             </form>
-            <!-- زر إضافة موظف -->
-            <button type="button" class="btn btn-primary" onclick="window.location='{{ route('employees.create') }}'">
-                إضافة موظف جديد
-            </button>
+
+            @if(auth()->user()->role?->name === 'مدير النظام')
+                <button type="button" class="btn btn-primary" onclick="window.location='{{ route('employees.create') }}'">
+                    إضافة موظف جديد
+                </button>
+            @endif
         </div>
     </section>
 
-    <!-- جدول الموظفين -->
     <section class="section">
         <article class="card">
             <header class="card-header">
-                <h2 class="card-title">قائمة الموظفين</h2>
+                <h2 class="card-title">
+                    {{ auth()->user()->role?->name === 'مدير القسم' ? 'قائمة موظفي القسم' : 'قائمة الموظفين' }}
+                </h2>
             </header>
             <div class="card-body">
                 <div class="table-responsive">
@@ -50,11 +51,7 @@
                                     <td>{{ $employee->jobTitle->name ?? '-' }}</td>
                                     <td>{{ \Carbon\Carbon::parse($employee->hire_date)->format('d-m-Y') }}</td>
                                     <td>
-                                        @if($employee->birth_date)
-                                            {{ \Carbon\Carbon::parse($employee->birth_date)->age }}
-                                        @else
-                                            -
-                                        @endif
+                                        {{ $employee->birth_date ? \Carbon\Carbon::parse($employee->birth_date)->age : '-' }}
                                     </td>
                                     <td>
                                         @if($employee->status == 'نشط')
@@ -70,12 +67,15 @@
                                     <td>
                                         <div class="action-buttons" style="display: flex; gap: 5px;">
                                             <a href="{{ route('employees.show', $employee->id) }}" class="btn btn-sm btn-outline">عرض</a>
-                                            <a href="{{ route('employees.edit', $employee->id) }}" class="btn btn-sm btn-outline">تعديل</a>
-                                            <form action="{{ route('employees.destroy', $employee->id) }}" method="POST" style="display:inline;">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('هل أنت متأكد من حذف الموظف؟')">حذف</button>
-                                            </form>
+
+                                            @if(auth()->user()->role?->name === 'مدير النظام')
+                                                <a href="{{ route('employees.edit', $employee->id) }}" class="btn btn-sm btn-outline">تعديل</a>
+                                                <form action="{{ route('employees.destroy', $employee->id) }}" method="POST" style="display:inline;">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('هل أنت متأكد من حذف الموظف؟')">حذف</button>
+                                                </form>
+                                            @endif
                                         </div>
                                     </td>
                                 </tr>

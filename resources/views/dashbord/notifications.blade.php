@@ -1,363 +1,321 @@
 @extends('layout.app')
 
-@section('title')
-    الاشعارات
-@endsection
+@section('title', 'الإشعارات')
 
 @section('content')
-    <div class="main">
-            <!-- الهيدر العلوي -->
-            <header class="main-header">
-                <div class="header-left">
-                    <h1 class="page-title">الإشعارات والتنبيهات</h1>
-                    <p class="page-subtitle">
-                        متابعة جميع الإشعارات الصادرة من وحدات نظام الموارد البشرية
-                    </p>
-                </div>
-                <div class="header-right">
-                    <div class="header-user">
-                        <div class="header-user-avatar">م</div>
-                        <div class="header-user-info">
-                            <span class="header-user-name">مدير النظام</span>
-                            <span class="header-user-role">إدارة الموارد البشرية</span>
-                        </div>
-                        <span class="header-notifications-badge">9</span>
-                    </div>
-                </div>
-            </header>
+ <style>
+    /* 1. التعتيم الكامل للخلفية وإخفاء القائمة الجانبية برمجياً */
+    #sendGeneralNotification {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        background-color: rgba(26, 26, 46, 0.9) !important; /* لون غامق مائل للبنفسجي */
+        backdrop-filter: blur(10px); /* تأثير الضبابية الاحترافي */
+        z-index: 999999 !important; /* أعلى من القائمة الجانبية */
+        display: none;
+        align-items: center;
+        justify-content: center;
+    }
 
-            <!-- محتوى الصفحة -->
-            <main class="main-content">
+    #sendGeneralNotification.show {
+        display: flex !important;
+    }
 
-                <!-- ملخص الإشعارات -->
-                <section class="section">
-                    <div class="section-header">
-                        <h2 class="section-title">ملخص الإشعارات</h2>
+    /* 2. تصميم النموذج البنفسجي (نفس التصميم الأول) */
+    .modal-content {
+        border: none !important;
+        border-radius: 20px !important;
+        box-shadow: 0 25px 50px rgba(0,0,0,0.5) !important;
+        background: #fff;
+        width: 100%;
+        max-width: 550px;
+        overflow: hidden;
+        direction: rtl;
+    }
+
+    .modal-header {
+        background: linear-gradient(45deg, #6f42c1, #8e44ad) !important;
+        color: white !important;
+        padding: 25px !important;
+        border: none !important;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .modal-body {
+        padding: 30px !important;
+        text-align: right;
+    }
+
+    .form-control {
+        border: 2px solid #f0f0f0 !important;
+        border-radius: 12px !important;
+        padding: 12px !important;
+        margin-top: 10px;
+    }
+
+    .form-control:focus {
+        border-color: #6f42c1 !important;
+        box-shadow: none !important;
+    }
+
+    .modal-footer {
+        padding: 20px 30px !important;
+        display: flex !important;
+        flex-direction: row-reverse !important;
+        gap: 15px !important;
+        border-top: 1px solid #eee !important;
+    }
+
+    .btn-send {
+        background: #6f42c1 !important;
+        color: white !important;
+        border: none !important;
+        padding: 12px 25px !important;
+        border-radius: 10px !important;
+        font-weight: bold;
+    }
+
+    .btn-cancel {
+        background: #f8f9fa !important;
+        border: 1px solid #ddd !important;
+        color: #666 !important;
+        padding: 12px 25px !important;
+        border-radius: 10px !important;
+    }
+</style>
+
+<div class="main">
+    <main class="main-content">
+        <section class="section">
+            <div class="section-header">
+                <h2 class="section-title">ملخص الإشعارات</h2>
+            </div>
+            <div class="grid grid-4">
+                <article class="card stat-card">
+                    <div class="stat-card-header">
+                        <h3 class="stat-title">غير مقروءة</h3>
+                        <span class="stat-icon stat-icon-warning">●</span>
                     </div>
+                    <div class="stat-card-body">
+                        <p class="stat-value">{{ $stats['unread'] ?? 0 }}</p>
+                        <p class="stat-caption">إشعارات تحتاج إلى مراجعة</p>
+                    </div>
+                </article>
+
+                <article class="card stat-card">
+                    <div class="stat-card-header">
+                        <h3 class="stat-title">مهمة</h3>
+                        <span class="stat-icon stat-icon-danger">!</span>
+                    </div>
+                    <div class="stat-card-body">
+                        <p class="stat-value">{{ $stats['important'] }}</p>
+                        <p class="stat-caption">تنبيهات عالية الأهمية</p>
+                    </div>
+                </article>
+
+                <article class="card stat-card">
+                    <div class="stat-card-header">
+                        <h3 class="stat-title">إشعارات النظام</h3>
+                        <span class="stat-icon stat-icon-info">ℹ</span>
+                    </div>
+                    <div class="stat-card-body">
+                        <p class="stat-value">{{ $stats['system'] }}</p>
+                        <p class="stat-caption">رسائل صادرة آلياً</p>
+                    </div>
+                </article>
+
+                <article class="card stat-card">
+                    <div class="stat-card-header">
+                        <h3 class="stat-title">إجمالي الإشعارات</h3>
+                        <span class="stat-icon stat-icon-primary">🔔</span>
+                    </div>
+                    <div class="stat-card-body">
+                        <p class="stat-value">{{ $stats['total'] }}</p>
+                        <p class="stat-caption">خلال آخر 7 أيام</p>
+                    </div>
+                </article>
+            </div>
+        </section>
+
+        <section class="section">
+            <div class="notifications-header">
+                <form action="{{ route('notifications') }}" method="GET">
                     <div class="grid grid-4">
-                        <article class="card stat-card">
-                            <div class="stat-card-header">
-                                <h3 class="stat-title">غير مقروءة</h3>
-                                <span class="stat-icon stat-icon-warning">●</span>
-                            </div>
-                            <div class="stat-card-body">
-                                <p class="stat-value">6</p>
-                                <p class="stat-caption">إشعارات تحتاج إلى مراجعة</p>
-                            </div>
-                        </article>
-
-                        <article class="card stat-card">
-                            <div class="stat-card-header">
-                                <h3 class="stat-title">مهمة</h3>
-                                <span class="stat-icon stat-icon-danger">!</span>
-                            </div>
-                            <div class="stat-card-body">
-                                <p class="stat-value">3</p>
-                                <p class="stat-caption">إنذارات أو تنبيهات عالية الأهمية</p>
-                            </div>
-                        </article>
-
-                        <article class="card stat-card">
-                            <div class="stat-card-header">
-                                <h3 class="stat-title">إشعارات النظام</h3>
-                                <span class="stat-icon stat-icon-info">ℹ</span>
-                            </div>
-                            <div class="stat-card-body">
-                                <p class="stat-value">5</p>
-                                <p class="stat-caption">رسائل صادرة آلياً من النظام</p>
-                            </div>
-                        </article>
-
-                        <article class="card stat-card">
-                            <div class="stat-card-header">
-                                <h3 class="stat-title">إجمالي الإشعارات</h3>
-                                <span class="stat-icon stat-icon-primary">🔔</span>
-                            </div>
-                            <div class="stat-card-body">
-                                <p class="stat-value">24</p>
-                                <p class="stat-caption">خلال آخر 7 أيام</p>
-                            </div>
-                        </article>
-                    </div>
-                </section>
-
-                <!-- الفلاتر والإجراءات -->
-                <section class="section">
-                    <div class="notifications-header">
-                        <div class="grid grid-4">
-                            <div class="form-group">
-                                <label class="form-label" for="filterNotificationType">نوع الإشعار</label>
-                                <select id="filterNotificationType" class="form-control">
-                                    <option value="">كل الأنواع</option>
-                                    <option value="important">مهم</option>
-                                    <option value="system">نظام</option>
-                                    <option value="reminder">تذكير</option>
-                                    <option value="info">معلومات</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label" for="filterNotificationStatus">الحالة</label>
-                                <select id="filterNotificationStatus" class="form-control">
-                                    <option value="">الكل</option>
-                                    <option value="unread">غير مقروء</option>
-                                    <option value="read">مقروء</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label" for="filterFromDate">من تاريخ</label>
-                                <input
-                                    type="date"
-                                    id="filterFromDate"
-                                    class="form-control"
-                                >
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label" for="filterToDate">إلى تاريخ</label>
-                                <input
-                                    type="date"
-                                    id="filterToDate"
-                                    class="form-control"
-                                >
-                            </div>
+                        <div class="form-group">
+                            <label class="form-label">نوع الإشعار</label>
+                            <select name="type" class="form-control" onchange="this.form.submit()">
+                                <option value="">كل الأنواع</option>
+                                <option value="important" {{ request('type') == 'important' ? 'selected' : '' }}>مهم</option>
+                                <option value="warning" {{ request('type') == 'warning' ? 'selected' : '' }}>تنبيه (حضور)</option>
+                                <option value="success" {{ request('type') == 'success' ? 'selected' : '' }}>نجاح (رواتب)</option>
+                                <option value="info" {{ request('type') == 'info' ? 'selected' : '' }}>معلومات (مهام)</option>
+                            </select>
                         </div>
-
-                        <div class="notifications-actions">
-                            <button type="button" class="btn btn-primary">
-                                وضع الجميع كمقروء
-                            </button>
-                            <button type="button" class="btn btn-outline">
-                                حذف جميع الإشعارات
-                            </button>
-                            <button type="button" class="btn btn-outline">
-                                إرسال إشعار جديد
-                            </button>
-                            <button type="button" class="btn btn-outline">
-                                إعدادات الإشعارات
-                            </button>
+                        <div class="form-group">
+                            <label class="form-label">الحالة</label>
+                            <select name="status" class="form-control" onchange="this.form.submit()">
+                                <option value="">الكل</option>
+                                <option value="unread" {{ request('status') == 'unread' ? 'selected' : '' }}>غير مقروء</option>
+                                <option value="read" {{ request('status') == 'read' ? 'selected' : '' }}>مقروء</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">من تاريخ</label>
+                            <input type="date" name="from_date" value="{{ request('from_date') }}" class="form-control" onchange="this.form.submit()">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">إلى تاريخ</label>
+                            <input type="date" name="to_date" value="{{ request('to_date') }}" class="form-control" onchange="this.form.submit()">
                         </div>
                     </div>
-                </section>
+                </form>
 
-                <!-- قائمة الإشعارات -->
-                <section class="section">
-                    <article class="card">
-                        <header class="card-header">
-                            <div class="card-header-main">
-                                <h2 class="card-title">قائمة الإشعارات</h2>
-                                <p class="card-subtitle">
-                                    عرض جميع الإشعارات حسب أحدث وقت إرسال
-                                </p>
-                            </div>
-                        </header>
-                        <div class="card-body">
-                            <ul class="notifications-list">
+                <div class="notifications-actions" style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
+                    <a href="{{ route('notifications.readAll') }}" class="btn btn-primary">وضع الجميع كمقروء</a>
 
-                                <!-- إشعار مهم غير مقروء -->
-                                <li class="notification-item notification-unread">
-                                    <div class="notification-main">
-                                        <div class="notification-icon notification-icon-important">!</div>
-                                        <div class="notification-content">
-                                            <div class="notification-header-row">
-                                                <span class="notification-title">
-                                                    تأخير في تسجيل حضور بعض الموظفين
-                                                </span>
-                                                <span class="badge badge-notification badge-notification-important">
-                                                    مهم
-                                                </span>
-                                            </div>
-                                            <p class="notification-text">
-                                                تم رصد 3 حالات تأخير في الحضور اليوم في قسم الدعم الفني، يرجى المراجعة واتخاذ القرار المناسب.
-                                            </p>
-                                            <div class="notification-meta">
-                                                <span class="notification-time">منذ 5 دقائق</span>
-                                                <span class="notification-source">من: نظام الحضور والانصراف</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="notification-actions">
-                                        <button type="button" class="btn btn-sm btn-primary">
-                                            عرض
-                                        </button>
-                                        <button type="button" class="btn btn-sm btn-outline">
-                                            وضع كمقروء
-                                        </button>
-                                        <button type="button" class="btn btn-sm btn-ghost">
-                                            حذف
-                                        </button>
-                                    </div>
-                                </li>
+                    <form action="{{ route('notifications.deleteAll') }}" method="POST" onsubmit="return confirm('هل أنت متأكد من حذف الكل؟')">
+                        @csrf @method('DELETE')
+                        <button type="submit" class="btn btn-outline">حذف الكل</button>
+                    </form>
 
-                                <!-- إشعار نظام غير مقروء -->
-                                <li class="notification-item notification-unread">
-                                    <div class="notification-main">
-                                        <div class="notification-icon notification-icon-system">ℹ</div>
-                                        <div class="notification-content">
-                                            <div class="notification-header-row">
-                                                <span class="notification-title">
-                                                    إتمام معالجة كشوف رواتب شهر نوفمبر 2025
-                                                </span>
-                                                <span class="badge badge-notification badge-notification-system">
-                                                    نظام
-                                                </span>
-                                            </div>
-                                            <p class="notification-text">
-                                                تم الانتهاء من إنشاء كشوف رواتب شهر نوفمبر 2025 لجميع الأقسام، يرجى مراجعتها قبل الاعتماد النهائي.
-                                            </p>
-                                            <div class="notification-meta">
-                                                <span class="notification-time">منذ 20 دقيقة</span>
-                                                <span class="notification-source">من: نظام الرواتب</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="notification-actions">
-                                        <button type="button" class="btn btn-sm btn-primary">
-                                            عرض
-                                        </button>
-                                        <button type="button" class="btn btn-sm btn-outline">
-                                            وضع كمقروء
-                                        </button>
-                                        <button type="button" class="btn btn-sm btn-ghost">
-                                            حذف
-                                        </button>
-                                    </div>
-                                </li>
+                    @if(auth()->user()->role && auth()->user()->role->name == 'مدير النظام')
+                    <button type="button" class="btn btn-general" data-bs-toggle="modal" data-bs-target="#sendGeneralNotification">
+                        إرسال إعلان عام 📢
+                    </button>
+                    @endif
+                </div>
+            </div>
+        </section>
 
-                                <!-- إشعار تذكير غير مقروء -->
-                                <li class="notification-item notification-unread">
-                                    <div class="notification-main">
-                                        <div class="notification-icon notification-icon-reminder">⏰</div>
-                                        <div class="notification-content">
-                                            <div class="notification-header-row">
-                                                <span class="notification-title">
-                                                    تذكير بمراجعة طلبات الإجازة المعلقة
-                                                </span>
-                                                <span class="badge badge-notification badge-notification-reminder">
-                                                    تذكير
-                                                </span>
-                                            </div>
-                                            <p class="notification-text">
-                                                يوجد حالياً 5 طلبات إجازة في حالة "قيد الانتظار" تحتاج إلى اعتماد أو رفض.
-                                            </p>
-                                            <div class="notification-meta">
-                                                <span class="notification-time">منذ ساعة واحدة</span>
-                                                <span class="notification-source">من: نظام الإجازات</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="notification-actions">
-                                        <button type="button" class="btn btn-sm btn-primary">
-                                            عرض
-                                        </button>
-                                        <button type="button" class="btn btn-sm btn-outline">
-                                            وضع كمقروء
-                                        </button>
-                                        <button type="button" class="btn btn-sm btn-ghost">
-                                            حذف
-                                        </button>
-                                    </div>
-                                </li>
+        <section class="section">
+            <article class="card">
+                <header class="card-header">
+                    <h2 class="card-title">قائمة الإشعارات</h2>
+                </header>
+                <div class="card-body">
+                    <ul class="notifications-list">
+    @forelse($notifications as $noti)
+    <li class="notification-item {{ !$noti->is_read ? 'notification-unread' : '' }}">
+        <div class="notification-main">
+            <div class="notification-icon
+                {{ $noti->type == 'important' ? 'notification-icon-important' : '' }}
+                {{ $noti->type == 'system' ? 'notification-icon-system' : '' }}
+                {{ $noti->type == 'reminder' ? 'notification-icon-reminder' : '' }}">
 
-                                <!-- إشعار معلومات مقروء -->
-                                <li class="notification-item">
-                                    <div class="notification-main">
-                                        <div class="notification-icon notification-icon-info">i</div>
-                                        <div class="notification-content">
-                                            <div class="notification-header-row">
-                                                <span class="notification-title">
-                                                    إضافة موظف جديد إلى قسم تطوير البرمجيات
-                                                </span>
-                                                <span class="badge badge-notification badge-notification-info">
-                                                    معلومات
-                                                </span>
-                                            </div>
-                                            <p class="notification-text">
-                                                تم إضافة الموظف "أحمد سعيد" إلى قسم تطوير البرمجيات بمسمى "مطور برمجيات".
-                                            </p>
-                                            <div class="notification-meta">
-                                                <span class="notification-time">منذ 3 ساعات</span>
-                                                <span class="notification-source">من: إدارة الموظفين</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="notification-actions">
-                                        <button type="button" class="btn btn-sm btn-outline">
-                                            عرض
-                                        </button>
-                                        <button type="button" class="btn btn-sm btn-ghost">
-                                            حذف
-                                        </button>
-                                    </div>
-                                </li>
+                @if($noti->source == 'إعلان عام') 📢
+                @elseif($noti->source == 'نظام الحضور') ⏰
+                @elseif($noti->source == 'نظام الرواتب') 💰
+                @elseif($noti->source == 'نظام الإجازات') 📅
+                @else 🔔
+                @endif
+            </div>
 
-                                <!-- إشعار مهم مقروء -->
-                                <li class="notification-item">
-                                    <div class="notification-main">
-                                        <div class="notification-icon notification-icon-important">!</div>
-                                        <div class="notification-content">
-                                            <div class="notification-header-row">
-                                                <span class="notification-title">
-                                                    تجاوز حد الغياب المسموح لأحد الموظفين
-                                                </span>
-                                                <span class="badge badge-notification badge-notification-important">
-                                                    مهم
-                                                </span>
-                                            </div>
-                                            <p class="notification-text">
-                                                تجاوز الموظف "ليث عبد الله" عدد أيام الغياب المسموح بها خلال الشهر الحالي.
-                                            </p>
-                                            <div class="notification-meta">
-                                                <span class="notification-time">منذ يوم واحد</span>
-                                                <span class="notification-source">من: نظام الحضور والانصراف</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="notification-actions">
-                                        <button type="button" class="btn btn-sm btn-outline">
-                                            عرض
-                                        </button>
-                                        <button type="button" class="btn btn-sm btn-ghost">
-                                            حذف
-                                        </button>
-                                    </div>
-                                </li>
+            <div class="notification-content">
+                <div class="notification-header-row" style="display: flex; align-items: center; gap: 10px;">
+                    <span class="notification-title">{{ $noti->title }}</span>
 
-                                <!-- إشعار نظام قديم -->
-                                <li class="notification-item">
-                                    <div class="notification-main">
-                                        <div class="notification-icon notification-icon-system">ℹ</div>
-                                        <div class="notification-content">
-                                            <div class="notification-header-row">
-                                                <span class="notification-title">
-                                                    تحديث في إعدادات تقييم الأداء
-                                                </span>
-                                                <span class="badge badge-notification badge-notification-system">
-                                                    نظام
-                                                </span>
-                                            </div>
-                                            <p class="notification-text">
-                                                تم تعديل معايير تقييم الأداء لقسم تطوير البرمجيات وفقاً لتوجيهات الإدارة.
-                                            </p>
-                                            <div class="notification-meta">
-                                                <span class="notification-time">منذ 3 أيام</span>
-                                                <span class="notification-source">من: نظام تقييم الأداء</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="notification-actions">
-                                        <button type="button" class="btn btn-sm btn-outline">
-                                            عرض
-                                        </button>
-                                        <button type="button" class="btn btn-sm btn-ghost">
-                                            حذف
-                                        </button>
-                                    </div>
-                                </li>
+                    @if($noti->type == 'important')
+                        <span class="badge" style="background-color: #e74c3c; color: white; padding: 2px 8px; border-radius: 5px; font-size: 0.75rem;">مهم</span>
+                    @elseif($noti->type == 'reminder')
+                        <span class="badge" style="background-color: #f1c40f; color: #333; padding: 2px 8px; border-radius: 5px; font-size: 0.75rem;">تذكير</span>
+                    @elseif($noti->type == 'system')
+                        <span class="badge" style="background-color: #3498db; color: white; padding: 2px 8px; border-radius: 5px; font-size: 0.75rem;">من النظام</span>
+                    @endif
+                </div>
 
-                            </ul>
-                        </div>
-                    </article>
-                </section>
-
-            </main>
+                <p class="notification-text">{{ $noti->text }}</p>
+                <div class="notification-meta">
+                    <span class="notification-time">{{ $noti->created_at->diffForHumans() }}</span>
+                </div>
+            </div>
         </div>
+
+        <div class="notification-actions" style="display: flex; gap: 8px;">
+            @php
+                $targetRoute = '#';
+                if($noti->source == 'نظام الإجازات') $targetRoute = route('attendance'); // تأكد من أسماء المسارات لديك
+                elseif($noti->source == 'نظام الرواتب') $targetRoute = route('payroll.index'); // تأكد من أسماء المسارات لديك
+                elseif($noti->source == 'إدارة المهام') $targetRoute = route('tasks.admin'); // تأكد من أسماء المسارات لديك
+            @endphp
+
+
+            @if(auth()->user()->role && auth()->user()->role->name == 'مدير النظام')
+                @if($targetRoute != '#')
+                    <a href="{{ $targetRoute }}" class="btn btn-sm" style="background-color: #6f42c1; color: white; border-radius: 5px;">
+                        عرض التفاصيل
+                    </a>
+                @endif
+            @endif
+
+            @if(!$noti->is_read)
+                <a href="{{ route('notifications.read', $noti->id) }}" class="btn btn-sm btn-outline">قراءة</a>
+            @endif
+
+           <form action="{{ route('notifications.destroy', $noti->id) }}"
+                method="POST"
+                style="display:inline;"
+                onsubmit="return confirm('هل أنت متأكد من حذف هذا الإشعار؟ لا يمكن التراجع عن هذه الخطوة.')">
+                @csrf
+                @method('DELETE')
+                <button type="submit" class="btn btn-sm"
+                        style="background-color: transparent; color: #e74c3c; border: 1px solid #e74c3c; padding: 4px 10px; border-radius: 5px; transition: 0.3s;"
+                        onmouseover="this.style.backgroundColor='#e74c3c'; this.style.color='white'"
+                        onmouseout="this.style.backgroundColor='transparent'; this.style.color='#e74c3c'">
+                    حذف
+                </button>
+            </form>
+        </div>
+    </li>
+    @empty
+    <li style="text-align: center; padding: 20px;">لا توجد إشعارات حالياً.</li>
+    @endforelse
+</ul>
+                </div>
+            </article>
+        </section>
+    </main>
+</div>
+
+<div class="modal fade" id="sendGeneralNotification" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="margin: 0 !important; width: 100%; display: flex; justify-content: center;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" style="margin: 0;">📢 إرسال إعلان عام للموظفين</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" style="margin: 0;"></button>
+            </div>
+            <form action="{{ route('notifications.sendGeneral') }}" method="POST">
+                @csrf
+                <div class="modal-body">
+                    <div class="mb-4">
+                        <label class="form-label">عنوان الإعلان</label>
+                        <input type="text" name="title" class="form-control" placeholder="مثلاً: تنبيه بخصوص إجازة العيد" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">نص الرسالة</label>
+                        <textarea name="message" class="form-control" rows="5" placeholder="اكتب تفاصيل الإعلان هنا بكل وضوح..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-send">إرسال الإعلان الآن 🚀</button>
+                    <button type="button" class="btn btn-cancel" data-bs-dismiss="modal">إلغاء</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@endsection
+
+@section('script')
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // التأكد من أن المودال يعمل برمجياً
+        var myModalEl = document.getElementById('sendGeneralNotification');
+        var modal = new bootstrap.Modal(myModalEl);
+    });
+</script>
 @endsection

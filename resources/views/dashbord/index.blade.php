@@ -1,331 +1,347 @@
 @extends('layout.app')
 
-@section('title')
- لوحة التحكم - نظام إدارة الموارد البشرية
-@endsection
+@section('title', 'لوحة التحكم - HR System')
 
 @section('content')
-<main class="main-content">
+<style>
+    :root {
+        --bg-body: #f8f9fa;
+        --card-border: #eef0f2;
+        --text-dark: #333333;
+        --text-muted: #888888;
+        --accent-blue: #007bff;
+    }
 
-                <!-- الإحصائيات -->
-                <section class="section section-stats">
-                    <div class="section-header">
-                        <h2 class="section-title">إحصائيات سريعة</h2>
-                    </div>
-                    <div class="grid grid-4 stats-grid">
-                        <article class="card stat-card">
-                            <div class="stat-card-header">
-                                <h3 class="stat-title">إجمالي الموظفين</h3>
-                                <span class="stat-icon stat-icon-primary">👥</span>
-                            </div>
-                            <div class="stat-card-body">
-                                <p class="stat-value">42</p>
-                                <p class="stat-caption">موظف نشط في الشركة</p>
-                            </div>
-                        </article>
+    .dashboard-wrapper {
+        background-color: var(--bg-body);
+        padding: 30px;
+        font-family: 'Cairo', sans-serif;
+        direction: rtl;
+    }
 
-                        <article class="card stat-card">
-                            <div class="stat-card-header">
-                                <h3 class="stat-title">الحضور اليوم</h3>
-                                <span class="stat-icon stat-icon-success">🕒</span>
-                            </div>
-                            <div class="stat-card-body">
-                                <p class="stat-value">38</p>
-                                <p class="stat-caption">موظف مسجل حضورهم اليوم</p>
-                            </div>
-                        </article>
+    /* العناوين الرئيسية */
+    .main-section-title {
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--text-dark);
+        margin-bottom: 20px;
+        text-align: right;
+    }
 
-                        <article class="card stat-card">
-                            <div class="stat-card-header">
-                                <h3 class="stat-title">طلبات الإجازة المعلقة</h3>
-                                <span class="stat-icon stat-icon-warning">📅</span>
-                            </div>
-                            <div class="stat-card-body">
-                                <p class="stat-value">5</p>
-                                <p class="stat-caption">في انتظار اعتماد الموارد البشرية</p>
-                            </div>
-                        </article>
+    /* كروت الإحصائيات - مطابقة للصورة */
+    .stats-row {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 15px;
+        margin-bottom: 30px;
+    }
 
-                        <article class="card stat-card">
-                            <div class="stat-card-header">
-                                <h3 class="stat-title">إشعارات النظام</h3>
-                                <span class="stat-icon stat-icon-info">🔔</span>
-                            </div>
-                            <div class="stat-card-body">
-                                <p class="stat-value">9</p>
-                                <p class="stat-caption">تنبيهات تحتاج إلى مراجعة</p>
-                            </div>
-                        </article>
-                    </div>
-                </section>
+    .stat-card {
+        background: #fff;
+        border: 1px solid var(--card-border);
+        border-radius: 8px;
+        padding: 20px;
+        position: relative;
+        min-height: 120px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
 
-                <!-- الحضور اليوم + آخر النشاطات -->
-                <section class="section section-grid">
-                    <div class="grid grid-2">
-                        <!-- الحضور اليوم -->
-                        <article class="card">
-                            <header class="card-header">
-                                <div class="card-header-main">
-                                    <h2 class="card-title">الحضور اليوم</h2>
-                                    <p class="card-subtitle">سجل الحضور والانصراف لليوم الحالي</p>
-                                </div>
-                                <div class="card-header-actions">
-                                    <button type="button" class="btn btn-sm btn-outline">عرض الكل</button>
-                                </div>
-                            </header>
-                            <div class="card-body">
-                                <div class="table-responsive">
-                                    <table class="table table-hover">
-                                        <thead>
-                                            <tr>
-                                                <th>الموظف</th>
-                                                <th>القسم</th>
-                                                <th>وقت الدخول</th>
-                                                <th>وقت الخروج</th>
-                                                <th>الحالة</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr>
-                                                <td>محمد صالح</td>
-                                                <td>تطوير البرمجيات</td>
-                                                <td>08:10 ص</td>
-                                                <td>—</td>
-                                                <td><span class="badge badge-success">حاضر</span></td>
-                                            </tr>
-                                            <tr>
-                                                <td>سارة إبراهيم</td>
-                                                <td>تحليل النظم</td>
-                                                <td>08:25 ص</td>
-                                                <td>—</td>
-                                                <td><span class="badge badge-success">حاضر</span></td>
-                                            </tr>
-                                            <tr>
-                                                <td>خالد يوسف</td>
-                                                <td>الدعم الفني</td>
-                                                <td>—</td>
-                                                <td>—</td>
-                                                <td><span class="badge badge-danger">غائب</span></td>
-                                            </tr>
-                                            <tr>
-                                                <td>ليث عبد الله</td>
-                                                <td>تطوير البرمجيات</td>
-                                                <td>09:05 ص</td>
-                                                <td>—</td>
-                                                <td><span class="badge badge-warning">متأخر</span></td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </article>
+    .stat-icon-top {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        font-size: 18px;
+    }
 
-                        <!-- آخر النشاطات -->
-                        <article class="card">
-                            <header class="card-header">
-                                <div class="card-header-main">
-                                    <h2 class="card-title">آخر نشاطات النظام</h2>
-                                    <p class="card-subtitle">سجل العمليات الأخيرة في النظام</p>
-                                </div>
-                                <div class="card-header-actions">
-                                    <button type="button" class="btn btn-sm btn-outline">عرض السجل الكامل</button>
-                                </div>
-                            </header>
-                            <div class="card-body">
-                                <ul class="activity-list">
-                                    <li class="activity-item">
-                                        <div class="activity-icon activity-icon-success">✓</div>
-                                        <div class="activity-content">
-                                            <p class="activity-text">
-                                                تمت إضافة موظف جديد: <span class="activity-strong">أحمد سعيد</span> في قسم تطوير البرمجيات.
-                                            </p>
-                                            <span class="activity-meta">منذ 10 دقائق</span>
-                                        </div>
-                                    </li>
-                                    <li class="activity-item">
-                                        <div class="activity-icon activity-icon-info">ℹ</div>
-                                        <div class="activity-content">
-                                            <p class="activity-text">
-                                                اعتماد طلب إجازة لموظف: <span class="activity-strong">سارة إبراهيم</span> لمدة 3 أيام.
-                                            </p>
-                                            <span class="activity-meta">منذ 30 دقيقة</span>
-                                        </div>
-                                    </li>
-                                    <li class="activity-item">
-                                        <div class="activity-icon activity-icon-warning">!</div>
-                                        <div class="activity-content">
-                                            <p class="activity-text">
-                                                وجود <span class="activity-strong">5</span> طلبات إجازة جديدة بانتظار الموافقة.
-                                            </p>
-                                            <span class="activity-meta">منذ ساعة واحدة</span>
-                                        </div>
-                                    </li>
-                                    <li class="activity-item">
-                                        <div class="activity-icon activity-icon-primary">★</div>
-                                        <div class="activity-content">
-                                            <p class="activity-text">
-                                                تم إنشاء تقرير الحضور الشهري لقسم <span class="activity-strong">الدعم الفني</span>.
-                                            </p>
-                                            <span class="activity-meta">منذ ساعتين</span>
-                                        </div>
-                                    </li>
-                                </ul>
-                            </div>
-                        </article>
-                    </div>
-                </section>
+    .stat-main-info {
+        text-align: left;
+        margin-top: 10px;
+    }
 
-                <!-- الإجازات / الرواتب / مهام الموارد البشرية -->
-                <section class="section section-grid">
-                    <div class="grid grid-3">
-                        <!-- أحدث طلبات الإجازة -->
-                        <article class="card">
-                            <header class="card-header">
-                                <div class="card-header-main">
-                                    <h2 class="card-title">أحدث طلبات الإجازة</h2>
-                                    <p class="card-subtitle">متابعة حالة طلبات الإجازة الجديدة</p>
-                                </div>
-                                <div class="card-header-actions">
-                                    <button type="button" class="btn btn-sm btn-outline">كل الطلبات</button>
-                                </div>
-                            </header>
-                            <div class="card-body">
-                                <ul class="list list-leaves">
-                                    <li class="list-item">
-                                        <div class="list-main">
-                                            <span class="list-title">سارة إبراهيم</span>
-                                            <span class="badge badge-warning">قيد المراجعة</span>
-                                        </div>
-                                        <div class="list-meta">
-                                            <span class="list-text">إجازة سنوية • 3 أيام</span>
-                                            <span class="list-date">من 05 إلى 07 ديسمبر</span>
-                                        </div>
-                                    </li>
-                                    <li class="list-item">
-                                        <div class="list-main">
-                                            <span class="list-title">محمد صالح</span>
-                                            <span class="badge badge-success">معتمدة</span>
-                                        </div>
-                                        <div class="list-meta">
-                                            <span class="list-text">إجازة مرضية • يوم واحد</span>
-                                            <span class="list-date">04 ديسمبر 2025</span>
-                                        </div>
-                                    </li>
-                                    <li class="list-item">
-                                        <div class="list-main">
-                                            <span class="list-title">ليث عبد الله</span>
-                                            <span class="badge badge-danger">مرفوضة</span>
-                                        </div>
-                                        <div class="list-meta">
-                                            <span class="list-text">إجازة طارئة • يومان</span>
-                                            <span class="list-date">01 ديسمبر 2025</span>
-                                        </div>
-                                    </li>
-                                </ul>
-                            </div>
-                        </article>
+    .stat-label {
+        display: block;
+        font-size: 14px;
+        color: var(--text-dark);
+        font-weight: 600;
+        margin-bottom: 5px;
+        text-align: left;
+    }
 
-                        <!-- تنبيهات الرواتب -->
-                        <article class="card">
-                            <header class="card-header">
-                                <div class="card-header-main">
-                                    <h2 class="card-title">تنبيهات الرواتب</h2>
-                                    <p class="card-subtitle">متابعة حالة كشوف الرواتب الحالية</p>
-                                </div>
-                                <div class="card-header-actions">
-                                    <button type="button" class="btn btn-sm btn-outline">إدارة الرواتب</button>
-                                </div>
-                            </header>
-                            <div class="card-body">
-                                <ul class="list list-payroll">
-                                    <li class="list-item">
-                                        <div class="list-main">
-                                            <span class="list-title">رواتب شهر نوفمبر 2025</span>
-                                            <span class="badge badge-success">مدفوعة</span>
-                                        </div>
-                                        <div class="list-meta">
-                                            <span class="list-text">تم دفع رواتب جميع الموظفين</span>
-                                            <span class="list-date">30 نوفمبر 2025</span>
-                                        </div>
-                                    </li>
-                                    <li class="list-item">
-                                        <div class="list-main">
-                                            <span class="list-title">رواتب شهر ديسمبر 2025</span>
-                                            <span class="badge badge-warning">قيد التجهيز</span>
-                                        </div>
-                                        <div class="list-meta">
-                                            <span class="list-text">لم يتم اعتماد الكشوف النهائية بعد</span>
-                                            <span class="list-date">آخر تحديث: منذ 3 ساعات</span>
-                                        </div>
-                                    </li>
-                                    <li class="list-item">
-                                        <div class="list-main">
-                                            <span class="list-title">مراجعة البدلات والخصومات</span>
-                                            <span class="badge badge-info">مطلوب مراجعة</span>
-                                        </div>
-                                        <div class="list-meta">
-                                            <span class="list-text">بعض الأقسام تحتوي على خصومات غير معتمدة</span>
-                                            <span class="list-date">منذ يوم واحد</span>
-                                        </div>
-                                    </li>
-                                </ul>
-                            </div>
-                        </article>
+    .stat-num {
+        font-size: 32px;
+        font-weight: 700;
+        color: #000;
+    }
 
-                        <!-- مهام مسؤول الموارد البشرية -->
-                        <article class="card">
-                            <header class="card-header">
-                                <div class="card-header-main">
-                                    <h2 class="card-title">مهام الموارد البشرية اليوم</h2>
-                                    <p class="card-subtitle">قائمة بالمهام التي يُفضل إنجازها اليوم</p>
-                                </div>
-                                <div class="card-header-actions">
-                                    <button type="button" class="btn btn-sm btn-outline">إدارة المهام</button>
-                                </div>
-                            </header>
-                            <div class="card-body">
-                                <ul class="task-list">
-                                    <li class="task-item">
-                                        <label class="task-checkbox">
-                                            <input type="checkbox" class="task-input">
-                                            <span class="task-label">
-                                                مراجعة طلبات الإجازة المعلقة (5 طلبات)
-                                            </span>
-                                        </label>
-                                        <span class="task-badge task-badge-high">أولوية عالية</span>
-                                    </li>
-                                    <li class="task-item">
-                                        <label class="task-checkbox">
-                                            <input type="checkbox" class="task-input">
-                                            <span class="task-label">
-                                                تحديث بيانات الموظفين الجدد في النظام
-                                            </span>
-                                        </label>
-                                        <span class="task-badge task-badge-medium">أولوية متوسطة</span>
-                                    </li>
-                                    <li class="task-item">
-                                        <label class="task-checkbox">
-                                            <input type="checkbox" class="task-input">
-                                            <span class="task-label">
-                                                إعداد تقرير الحضور الأسبوعي للإدارة
-                                            </span>
-                                        </label>
-                                        <span class="task-badge task-badge-low">أولوية منخفضة</span>
-                                    </li>
-                                    <li class="task-item">
-                                        <label class="task-checkbox">
-                                            <input type="checkbox" class="task-input">
-                                            <span class="task-label">
-                                                مراجعة تقييمات الأداء المبدئية لفريق التطوير
-                                            </span>
-                                        </label>
-                                        <span class="task-badge task-badge-medium">أولوية متوسطة</span>
-                                    </li>
-                                </ul>
-                            </div>
-                        </article>
-                    </div>
-                </section>
+    .stat-footer-text {
+        font-size: 12px;
+        color: var(--text-muted);
+        margin-top: auto;
+    }
 
-            </main>
+    /* شبكة المحتوى الوسطى */
+    .content-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+
+    .card {
+        background: #fff;
+        border: 1px solid var(--card-border);
+        border-radius: 8px;
+        padding: 20px;
+    }
+
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .card-title-group h3 { font-size: 16px; margin: 0; color: #333; }
+    .card-title-group p { font-size: 12px; color: var(--text-muted); margin: 0; }
+
+    .btn-outline-sm {
+        border: 1px solid #ddd;
+        padding: 4px 12px;
+        border-radius: 15px;
+        font-size: 11px;
+        color: #666;
+        text-decoration: none;
+    }
+
+    /* الجداول - مطابقة للصورة */
+    .custom-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .custom-table th {
+        background: #f1f3f5;
+        padding: 10px;
+        font-size: 12px;
+        color: #666;
+        text-align: center;
+        border: 1px solid #eee;
+    }
+
+    .custom-table td {
+        padding: 12px;
+        font-size: 13px;
+        text-align: center;
+        border: 1px solid #eee;
+    }
+
+    /* الحالات (Badge) - Rounded كما في الصورة */
+    .badge-pill {
+        padding: 2px 15px;
+        border-radius: 20px;
+        font-size: 12px;
+        border: 1px solid transparent;
+    }
+    .status-hader { background: #e6fffa; color: #38b2ac; border-color: #38b2ac50; }
+    .status-late { background: #fff5f5; color: #e53e3e; border-color: #e53e3e50; }
+    .status-pending { background: #fffaf0; color: #dd6b20; border-color: #dd6b2050; }
+
+    /* التايملاين (النشاطات) */
+    .activity-row {
+        display: flex;
+        align-items: center;
+        padding: 15px 0;
+        border-bottom: 1px solid #f8f9fa;
+    }
+    .activity-text { flex-grow: 1; font-size: 13px; margin: 0 10px; }
+    .activity-time { font-size: 11px; color: #bbb; }
+
+    /* الشبكة السفلية - 3 أعمدة */
+    .bottom-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+    }
+
+    .list-item-minimal {
+        display: flex;
+        justify-content: space-between;
+        padding: 15px 0;
+        border-bottom: 1px solid #f8f9fa;
+    }
+    .item-label { font-size: 13px; color: #333; }
+    .item-sub { font-size: 11px; color: #999; }
+</style>
+
+<div class="dashboard-wrapper">
+    <h1 class="main-section-title">إحصائيات سريعة</h1>
+
+    <div class="stats-row">
+        <div class="stat-card">
+            <span class="stat-icon-top">👥</span>
+            <div class="stat-main-info">
+                <span class="stat-label">إجمالي الموظفين</span>
+                <span class="stat-num">{{ $stats['total_employees'] }}</span>
+            </div>
+            <p class="stat-footer-text">موظف نشط في الشركة</p>
+        </div>
+
+        <div class="stat-card">
+            <span class="stat-icon-top">🕒</span>
+            <div class="stat-main-info">
+                <span class="stat-label">الحضور اليوم</span>
+                <span class="stat-num">{{ $stats['today_attendance'] }}</span>
+            </div>
+            <p class="stat-footer-text">موظف مسجل حضورهم اليوم</p>
+        </div>
+
+        <div class="stat-card">
+            <span class="stat-icon-top">📅</span>
+            <div class="stat-main-info">
+                <span class="stat-label">طلبات الإجازة المعلقة</span>
+                <span class="stat-num">{{ $stats['pending_leaves'] }}</span>
+            </div>
+            <p class="stat-footer-text">في انتظار اعتماد الموارد البشرية</p>
+        </div>
+
+        <div class="stat-card">
+            <span class="stat-icon-top">🔔</span>
+            <div class="stat-main-info">
+                <span class="stat-label">إشعارات النظام</span>
+                <span class="stat-num">{{ $stats['unread_notifications'] }}</span>
+            </div>
+            <p class="stat-footer-text">تنبيهات تحتاج إلى مراجعة</p>
+        </div>
+    </div>
+
+    <div class="content-grid">
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title-group">
+                    <h3>الحضور اليوم</h3>
+                    <p>سجل الحضور والانصراف لليوم الحالي</p>
+                </div>
+                <a href="{{ route('attendance.index') }}" class="btn-outline-sm">عرض الكل</a>
+            </div>
+            <table class="custom-table">
+                <thead>
+                    <tr>
+                        <th>الموظف</th>
+                        <th>القسم</th>
+                        <th>وقت الدخول</th>
+                        <th>وقت الخروج</th>
+                        <th>الحالة</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($todayAttendance as $record)
+                    <tr>
+                        <td>{{ $record->employee->first_name }} {{ $record->employee->last_name }}</td>
+                        <td>{{ $record->employee->department ?? 'تطوير البرمجيات' }}</td>
+                        <td>{{ \Carbon\Carbon::parse($record->check_in)->format('h:i ص') }}</td>
+                        <td>—</td>
+                        <td>
+                            <span class="badge-pill {{ $record->status == 'late' ? 'status-late' : 'status-hader' }}">
+                                {{ $record->status == 'late' ? 'متأخر' : 'حاضر' }}
+                            </span>
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title-group">
+                    <h3>آخر نشاطات النظام</h3>
+                    <p>سجل العمليات الأخيرة في النظام</p>
+                </div>
+                <a href="#" class="btn-outline-sm">عرض السجل الكامل</a>
+            </div>
+            <div class="activities-container">
+                @foreach($activities as $activity)
+                <div class="activity-row">
+                    <span style="font-size: 14px;">✅</span>
+                    <p class="activity-text">{!! $activity->description !!}</p>
+                    <span class="activity-time">{{ $activity->created_at->diffForHumans() }}</span>
+                </div>
+                @endforeach
+            </div>
+        </div>
+    </div>
+
+    <div class="bottom-grid">
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title-group">
+                    <h3>أحدث طلبات الإجازة</h3>
+                    <p>متابعة حالة طلبات الإجازة الجديدة</p>
+                </div>
+                <a href="{{ route('leaves.index') }}" class="btn-outline-sm">كل الطلبات</a>
+            </div>
+            @foreach($latestLeaves as $leave)
+            <div class="list-item-minimal">
+                <div>
+                    <span class="item-label">{{ $leave->employee->first_name }}</span><br>
+                    <span class="item-sub">{{ $leave->leaveType->name }} • {{ \Carbon\Carbon::parse($leave->start_date)->format('d M') }}</span>
+                </div>
+                <span class="badge-pill {{ $leave->status == 'pending' ? 'status-pending' : 'status-hader' }}">
+                    {{ $leave->status == 'pending' ? 'قيد المراجعة' : 'معتمدة' }}
+                </span>
+            </div>
+            @endforeach
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title-group">
+                    <h3>تنبيهات الرواتب</h3>
+                    <p>متابعة حالة كشوف الرواتب الحالية</p>
+                </div>
+                <a href="#" class="btn-outline-sm">إدارة الرواتب</a>
+            </div>
+            <div class="list-item-minimal">
+                <div>
+                    <span class="item-label">رواتب شهر نوفمبر 2025</span><br>
+                    <span class="item-sub">تم دفع رواتب جميع الموظفين</span>
+                </div>
+                <span class="badge-pill status-hader">مدفوعة</span>
+            </div>
+            <div class="list-item-minimal" style="border: none;">
+                <div>
+                    <span class="item-label">رواتب شهر ديسمبر 2025</span><br>
+                    <span class="item-sub">لم يتم اعتماد الكشوف النهائية بعد</span>
+                </div>
+                <span class="badge-pill status-pending">قيد التجهيز</span>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title-group">
+                    <h3>مهام الموارد البشرية اليوم</h3>
+                    <p>قائمة بالمهام التي يفضل إنجازها اليوم</p>
+                </div>
+                <a href="#" class="btn-outline-sm">إدارة المهام</a>
+            </div>
+            <div class="list-item-minimal">
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <input type="checkbox">
+                    <span class="item-label">مراجعة طلبات الإجازة المعلقة</span>
+                </div>
+                <span class="status-late" style="font-size: 10px; padding: 2px 8px; border-radius: 10px;">أولوية عالية</span>
+            </div>
+            <div class="list-item-minimal">
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <input type="checkbox">
+                    <span class="item-label">تحديث بيانات الموظفين الجدد</span>
+                </div>
+                <span class="status-pending" style="font-size: 10px; padding: 2px 8px; border-radius: 10px;">أولوية متوسطة</span>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection

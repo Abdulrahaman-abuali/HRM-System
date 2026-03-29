@@ -21,12 +21,12 @@ class AppServiceProvider extends ServiceProvider
     {
         //
     }
-    protected $listen = [
-    \Illuminate\Auth\Events\Login::class => [
-        \App\Listeners\AutoCheckInOnLogin::class,
-    ],
-    \Illuminate\Auth\Events\Logout::class => [
-        \App\Listeners\AutoCheckOutOnLogout::class,
-    ],
-];
+//     protected $listen = [
+//     \Illuminate\Auth\Events\Login::class => [
+//         \App\Listeners\AutoCheckInOnLogin::class,
+//     ],
+//     \Illuminate\Auth\Events\Logout::class => [
+//         \App\Listeners\AutoCheckOutOnLogout::class,
+//     ],
+// ];
 }
