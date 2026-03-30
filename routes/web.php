@@ -24,11 +24,14 @@ Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
 // مسارات نظام بصمة الوجه (API) - للأجهزة الخارجية
 Route::prefix('face-attendance')->group(function () {
+    Route::get('/face-data', [FaceAttendanceController::class, 'exportFaceData']);
     Route::get('/health', [FaceAttendanceController::class, 'health']);
-    Route::get('/employees', [FaceAttendanceController::class, 'getEmployeesList']);
+    Route::get('/employees', [FaceAttendanceController::class, 'exportFaceData']);
     Route::post('/record', [FaceAttendanceController::class, 'record']);
     Route::get('/latest', [FaceAttendanceController::class, 'getLatestAttendance']);
 });
+
+/*
 
 /*
 |--------------------------------------------------------------------------
@@ -42,6 +45,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications');
     Route::get('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
     Route::delete('/notifications/{id}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
+    Route::get('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.readAll');
+    Route::delete('/notifications/destroy-all', [NotificationController::class, 'destroyAll'])->name('notifications.destroyAll');
 
     /*
     |--------------------------------------------------------------------------
@@ -71,7 +76,7 @@ Route::middleware(['auth'])->group(function () {
 
         // إدارة الموظفين (عرض فقط)
         Route::get('/employees', [EmployeeController::class, 'index'])->name('employees.index');
-        Route::get('/employees/{employee}', [EmployeeController::class, 'show'])->name('employees.show');
+
 
         // إدارة الإجازات والمهام (عرض واعتماد)
         Route::get('/admin/leaves', [LeaveRequestController::class, 'adminIndex'])->name('admin.leaves.index');
@@ -95,6 +100,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/employees/{employee}/edit', [EmployeeController::class, 'edit'])->name('employees.edit');
         Route::put('/employees/{employee}', [EmployeeController::class, 'update'])->name('employees.update');
         Route::delete('/employees/{employee}', [EmployeeController::class, 'destroy'])->name('employees.destroy');
+        Route::get('/employees/{employee}', [EmployeeController::class, 'show'])->name('employees.show');
 
         // إدارة الرواتب المتقدمة
         Route::put('/salaries/update', [PagesController::class, 'updateSalary'])->name('salaries.update');
