@@ -17,6 +17,7 @@ use App\Http\Controllers\FaceAttendanceController;
 | 1. المسارات العامة (بدون تسجيل دخول)
 |--------------------------------------------------------------------------
 */
+
 Route::get('/', [PagesController::class, 'showLogin'])->name('home');
 Route::get('/login', [PagesController::class, 'showLogin'])->name('login');
 Route::post('/login', [PagesController::class, 'login'])->name('login.submit');
@@ -31,7 +32,6 @@ Route::prefix('face-attendance')->group(function () {
     Route::get('/employees', [FaceAttendanceController::class, 'getEmployeesList']);
     Route::post('/record', [FaceAttendanceController::class, 'record']);
     Route::get('/latest', [FaceAttendanceController::class, 'getLatestAttendance']);
-
 });
 
 /*
@@ -49,7 +49,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
     Route::delete('/notifications/{id}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
     Route::get('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.readAll');
- Route::delete('/notifications/destroy-all', [NotificationController::class, 'destroyAll'])->name('notifications.deleteAll');
+    Route::delete('/notifications/destroy-all', [NotificationController::class, 'destroyAll'])->name('notifications.deleteAll');
     /*
     |--------------------------------------------------------------------------
     | أ: مسارات "الموظف" فقط
@@ -63,7 +63,9 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/my-tasks', [TaskController::class, 'index'])->name('tasks.index');
         Route::patch('/tasks/{id}/status', [TaskController::class, 'updateStatus'])->name('tasks.updateStatus');
     });
-
+    // أضف هذا السطر في ملف web.php
+    // غير السطر إلى هذا الشكل:
+    Route::get('/manager/dashboard', [PagesController::class, 'showDashboardPage'])->name('employees.dashboard_mangers');
     /*
     |--------------------------------------------------------------------------
     | ب: مسارات الإدارة المشتركة (مدير النظام + مدير القسم)
@@ -122,5 +124,4 @@ Route::middleware(['auth'])->group(function () {
         // مسارات عامة أخرى
         Route::post('/notifications/send-general', [NotificationController::class, 'sendGeneralNotification'])->name('notifications.sendGeneral');
     });
-
 });
