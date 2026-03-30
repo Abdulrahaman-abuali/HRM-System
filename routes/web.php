@@ -23,11 +23,21 @@ Route::post('/login', [PagesController::class, 'login'])->name('login.submit');
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
 // مسارات نظام بصمة الوجه (API) - للأجهزة الخارجية
+
+// مجموعة مسارات نظام البصمة
 Route::prefix('face-attendance')->group(function () {
-    Route::get('/health', [FaceAttendanceController::class, 'health']);
+
+    // تسجيل الحضور - يستقبل employee_id من جهاز البصمة
+    Route::post('/checkin', [FaceAttendanceController::class, 'checkin']);
+
+    // تصدير بيانات الوجه للموظفين (لجهاز البصمة)
+    Route::get('/face-data', [FaceAttendanceController::class, 'exportFaceData']);
+
+    // جلب قائمة الموظفين (لجهاز البصمة)
     Route::get('/employees', [FaceAttendanceController::class, 'getEmployeesList']);
-    Route::post('/record', [FaceAttendanceController::class, 'record']);
-    Route::get('/latest', [FaceAttendanceController::class, 'getLatestAttendance']);
+
+    // التحقق من صحة الخادم (لجهاز البصمة)
+    Route::get('/health', [FaceAttendanceController::class, 'health']);
 });
 
 /*
