@@ -28,33 +28,15 @@ class LoginController extends Controller
     /**
      * تسجيل الخروج + تسجيل الانصراف تلقائياً
      */
-    public function logout(Request $request)
-    {
-        $user = Auth::user();
+   public function logout(Request $request)
+   {
+    // تنفيذ عملية تسجيل الخروج من النظام وتدمير الجلسة فقط
+    Auth::logout();
 
-        // --- تسجيل الانصراف تلقائياً عند الضغط على تسجيل الخروج ---
-        if ($user && $user->employee) {
-            $today = now()->toDateString();
+    $request->session()->invalidate();
+    $request->session()->regenerateToken();
 
-            // البحث عن سجل حضور اليوم الخاص بهذا الموظف
-            $record = AttendanceRecord::where('employee_id', $user->employee->id)
-                ->where('date', $today)
-                ->first();
-
-            // تحديث وقت الانصراف فقط إذا كان الموظف مسجل دخول ولم يسجل انصرافه بعد
-            if ($record && $record->check_in && !$record->check_out) {
-                $record->update([
-                    'check_out' => now()->format('H:i:s')
-                ]);
-            }
-        }
-        // -------------------------------------------------------
-
-        // تنفيذ عملية تسجيل الخروج من النظام وتدمير الجلسة
-        Auth::logout();
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
-
-        return redirect()->route('login')->with('success', 'تم تسجيل خروجك وانصرافك بنجاح.');
+    // تعديل رسالة النجاح لتناسب التغيير الجديد
+    return redirect()->route('login')->with('success', 'تم تسجيل خروجك بنجاح.');
     }
 }

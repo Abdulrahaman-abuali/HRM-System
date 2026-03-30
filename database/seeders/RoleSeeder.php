@@ -23,5 +23,10 @@ class RoleSeeder extends Seeder
         'description' => 'صلاحيات محدودة'
     ]);
 
+    Role::create([
+        'name' => 'مدير القسم',
+        'description' => 'صلاحيات محدودة'
+    ]);
+
     }
 }

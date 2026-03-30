@@ -4,13 +4,30 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>نظام الموارد البشرية - @yield('title')</title>
+
     <link rel="stylesheet" href="{{ asset('style/CSS.css') }}">
+
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+
     <style>
         .nav-link-active {
             background-color: rgba(255, 255, 255, 0.2);
             border-right: 4px solid #fff;
         }
+        .btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+            transition: all 0.2s ease;
+        }
+        /* تمييز خاص لقائمة مدير القسم */
+        .dept-manager-section {
+            border-top: 1px solid rgba(255,255,255,0.1);
+            margin-top: 10px;
+            padding-top: 10px;
+        }
     </style>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body class="app app-dashboard">
     <div class="layout">
@@ -26,7 +43,7 @@
             <nav class="sidebar-nav">
                 <ul class="nav-menu">
                     @auth
-                        {{-- قائمة مدير النظام (كاملة) --}}
+                        {{-- 1. قائمة مدير النظام --}}
                         @if(auth()->user()->role?->name === 'مدير النظام')
                             <li class="nav-item">
                                 <a href="{{ route('dashbord') }}" class="nav-link {{ request()->routeIs('dashbord') ? 'nav-link-active' : '' }}">
@@ -44,13 +61,18 @@
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a href="{{ route('attendance') }}" class="nav-link {{ request()->routeIs('attendance') ? 'nav-link-active' : '' }}">
+                                <a href="{{ route('admin.leaves.index') }}" class="nav-link {{ request()->routeIs('admin.leaves.*') ? 'nav-link-active' : '' }}">
                                     <span class="nav-icon">📅</span><span class="nav-text">الإجازات</span>
                                 </a>
                             </li>
                             <li class="nav-item">
                                 <a href="{{ route('salaries') }}" class="nav-link {{ request()->routeIs('salaries') ? 'nav-link-active' : '' }}">
                                     <span class="nav-icon">💰</span><span class="nav-text">الرواتب</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{{ route('tasks.admin') }}" class="nav-link {{ request()->routeIs('tasks.admin') ? 'nav-link-active' : '' }}">
+                                    <span class="nav-icon">📋</span><span class="nav-text">المهام</span>
                                 </a>
                             </li>
                             <li class="nav-item">
@@ -75,7 +97,36 @@
                             </li>
                         @endif
 
-                        {{-- قائمة الموظف --}}
+                        {{-- 2. قائمة مدير القسم (الجديدة) --}}
+                        @if(auth()->user()->role?->name === 'مدير القسم')
+                            <li class="nav-item">
+                                <a href="{{ route('dashbord') }}" class="nav-link {{ request()->routeIs('dashbord') ? 'nav-link-active' : '' }}">
+                                    <span class="nav-icon">🏢</span><span class="nav-text">إحصائيات القسم</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{{ route('employees.index') }}" class="nav-link {{ request()->routeIs('employees.*') ? 'nav-link-active' : '' }}">
+                                    <span class="nav-icon">👥</span><span class="nav-text">موظفي القسم</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{{ route('leave') }}" class="nav-link {{ request()->routeIs('leave') ? 'nav-link-active' : '' }}">
+                                    <span class="nav-icon">🕒</span><span class="nav-text">تحضير القسم</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{{ route('admin.leaves.index') }}" class="nav-link {{ request()->routeIs('admin.leaves.*') ? 'nav-link-active' : '' }}">
+                                    <span class="nav-icon">📅</span><span class="nav-text">طلبات إجازات القسم</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{{ route('notifications') }}" class="nav-link {{ request()->routeIs('notifications') ? 'nav-link-active' : '' }}">
+                                    <span class="nav-icon">🔔</span><span class="nav-text">تنبيهات القسم</span>
+                                </a>
+                            </li>
+                        @endif
+
+                        {{-- 3. قائمة الموظف --}}
                         @if(auth()->user()->role?->name === 'موظف')
                             <li class="nav-item">
                                 <a href="{{ route('employee.dashboard') }}" class="nav-link {{ request()->routeIs('employee.dashboard') ? 'nav-link-active' : '' }}">
@@ -88,19 +139,33 @@
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a href="{{ route('attendance.index') }}" class="nav-link {{ request()->routeIs('leave') ? 'nav-link-active' : '' }}">
+                                <a href="{{ route('attendance.index') }}" class="nav-link {{ request()->routeIs('attendance.index') ? 'nav-link-active' : '' }}">
                                     <span class="nav-icon">🕒</span><span class="nav-text">سجل الحضور</span>
                                 </a>
                             </li>
-                            <li class="nav-item {{ request()->routeIs('salaries') ? 'active' : '' }}">
-                                <a href="{{ route('salaries') }}" class="nav-link">
-                                    <span class="nav-icon">💰</span>
-                                    <span class="nav-text">كشوف الرواتب</span>
+                            <li class="nav-item">
+                                <a href="{{ route('salaries') }}" class="nav-link {{ request()->routeIs('salaries') ? 'nav-link-active' : '' }}">
+                                    <span class="nav-icon">💰</span><span class="nav-text">كشوف الرواتب</span>
                                 </a>
                             </li>
-                            <li class="nav-item"><a href="#" class="nav-link"><span class="nav-icon">📊</span><span class="nav-text">تقييمات الأداء</span></a></li>
-                            <li class="nav-item"><a href="#" class="nav-link"><span class="nav-icon">👤</span><span class="nav-text">ملفي الشخصي</span></a></li>
-                            <li class="nav-item"><a href="#" class="nav-link"><span class="nav-icon">🔔</span><span class="nav-text">الإشعارات</span></a></li>
+                            <li class="nav-item">
+                                <a href="{{ route('tasks.index') }}" class="nav-link {{ request()->routeIs('tasks.index') ? 'nav-link-active' : '' }}">
+                                    <span class="nav-icon">📋</span><span class="nav-text">متابعة المهام</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{{ route('notifications') }}" class="nav-link {{ request()->routeIs('notifications') ? 'nav-link-active' : '' }}">
+                                    <span class="nav-icon">🔔</span><span class="nav-text">الإشعارات</span>
+                                    @php
+                                        $unreadCount = \App\Models\Notification::where('user_id', auth()->id())->where('is_read', 0)->count();
+                                    @endphp
+                                    @if($unreadCount > 0)
+                                        <span class="badge" style="background: red; color: white; border-radius: 50%; padding: 2px 6px; font-size: 10px; margin-right: 5px;">
+                                            {{ $unreadCount }}
+                                        </span>
+                                    @endif
+                                </a>
+                            </li>
                         @endif
                     @endauth
                 </ul>
@@ -139,34 +204,50 @@
             </header>
 
             <main class="content-body">
-                {{-- رسائل النجاح --}}
-@if(session('success'))
-    <div style="padding: 15px; background-color: #d1e7dd; color: #0f5132; border: 1px solid #badbcc; border-radius: 8px; margin: 20px auto; max-width: 90%; text-align: center;">
-        <strong>✅ {{ session('success') }}</strong>
-    </div>
-@endif
+                @if(session('success'))
+                    <div style="padding: 15px; background-color: #d1e7dd; color: #0f5132; border: 1px solid #badbcc; border-radius: 8px; margin: 20px auto; max-width: 90%; text-align: center;">
+                        <strong>✅ {{ session('success') }}</strong>
+                    </div>
+                @endif
 
-{{-- رسائل الخطأ --}}
-@if(session('error'))
-    <div style="padding: 15px; background-color: #f8d7da; color: #842029; border: 1px solid #f5c2c7; border-radius: 8px; margin: 20px auto; max-width: 90%; text-align: center;">
-        <strong>❌ {{ session('error') }}</strong>
-    </div>
-@endif
+                @if(session('error'))
+                    <div style="padding: 15px; background-color: #f8d7da; color: #842029; border: 1px solid #f5c2c7; border-radius: 8px; margin: 20px auto; max-width: 90%; text-align: center;">
+                        <strong>❌ {{ session('error') }}</strong>
+                    </div>
+                @endif
 
-{{-- أخطاء التحقق من البيانات (Validation Errors) --}}
-@if ($errors->any())
-    <div style="padding: 15px; background-color: #fff3cd; color: #664d03; border: 1px solid #ffe69c; border-radius: 8px; margin: 20px auto; max-width: 90%;">
-        <ul style="margin: 0;">
-            @foreach ($errors->all() as $error)
-                <li>{{ $error }}</li>
-            @endforeach
-        </ul>
-    </div>
-@endif
+                @if ($errors->any())
+                    <div style="padding: 15px; background-color: #fff3cd; color: #664d03; border: 1px solid #ffe69c; border-radius: 8px; margin: 20px auto; max-width: 90%;">
+                        <ul style="margin: 0;">
+                            @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
                 @yield('content')
             </main>
         </div>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    {{-- تم تنظيف هذا الجزء من Reverb ليعمل النظام بدون أخطاء --}}
+    <script type="module">
+        const Toast = Swal.mixin({
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 4000,
+            timerProgressBar: true
+        });
+
+        // تم تعطيل Echo لتجنب أخطاء الاتصال بـ Reverb
+        window.addEventListener('load', () => {
+             console.log('🚀 System Loaded Successfully');
+        });
+    </script>
+
     @yield('script')
 </body>
 </html>

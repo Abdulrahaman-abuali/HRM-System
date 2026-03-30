@@ -4,12 +4,7 @@
 
 @section('content')
 <div class="main-content">
-    <header class="content-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <div>
-            <h1 style="font-size: 1.5rem; color: #333;">سجل الحضور والانصراف</h1>
-            <p style="color: #666; font-size: 0.9rem;">نظام إدارة الموارد البشرية - شركة البرمجيات الصغيرة</p>
-        </div>
-    </header>
+
 
     @auth
         {{-- ================================================= --}}
@@ -32,7 +27,7 @@
                                         <th style="padding: 12px; text-align: right;">ساعات العمل</th>
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <tbody id="employee-history-tbody">
                                     @forelse($records as $rec)
                                         <tr style="border-bottom: 1px solid #f1f5f9;">
                                             <td style="padding: 12px;"><strong>{{ $rec->date }}</strong></td>
@@ -58,7 +53,7 @@
         {{-- ================================================= --}}
         {{-- 2. واجهة المدير: حالة اليوم (الحضور والغياب) + الأرشيف --}}
         {{-- ================================================= --}}
-        @elseif(auth()->user()->role?->name === 'مدير النظام')
+        @elseif(in_array(auth()->user()->role?->name, ['مدير النظام', 'مدير القسم']))
             @php
                 $presentToday = $employees->filter(fn($e) => $e->attendanceRecords->isNotEmpty());
                 $absentToday = $employees->filter(fn($e) => $e->attendanceRecords->isEmpty());
@@ -73,7 +68,7 @@
                     <button type="submit" class="btn btn-primary" style="background: #6366f1; border: none; padding: 7px 15px; border-radius: 5px; color: white;">تحديث البيانات</button>
                 </form>
                 <div style="display: flex; gap: 10px;">
-                    <span style="background: #eef2ff; color: #4338ca; padding: 8px 15px; border-radius: 5px; border-right: 4px solid #4338ca;">إجمالي الحضور: {{ $presentToday->count() }}</span>
+                    <span style="background: #eef2ff; color: #4338ca; padding: 8px 15px; border-radius: 5px; border-right: 4px solid #4338ca;">إجمالي الحضور: <span id="total-present">{{ $presentToday->count() }}</span></span>
                     <span style="background: #fef2f2; color: #b91c1c; padding: 8px 15px; border-radius: 5px; border-right: 4px solid #b91c1c;">إجمالي الغياب: {{ $absentToday->count() }}</span>
                 </div>
             </div>
@@ -87,7 +82,7 @@
                     <div class="card-body" style="padding: 0;">
                         <table class="table" style="width: 100%;">
                             <thead style="background: #f9fafb;">
-                                <tr>
+
                                     <th style="padding: 12px; text-align: right;">الموظف</th>
                                     <th style="padding: 12px; text-align: right;">وقت الحضور</th>
                                     <th style="padding: 12px; text-align: right;">وقت الانصراف</th>
@@ -95,7 +90,7 @@
                                     <th style="padding: 12px; text-align: right;">الحالة</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody id="present-tbody">
                                 @forelse($presentToday as $emp)
                                     @php
                                         $rec = $emp->attendanceRecords->first();
@@ -128,7 +123,7 @@
                     </header>
                     <div class="card-body" style="padding: 0;">
                         <table class="table" style="width: 100%;">
-                            <tbody>
+                            <tbody id="absent-tbody">
                                 @forelse($absentToday as $emp)
                                     <tr style="border-bottom: 1px solid #fee2e2;">
                                         <td style="padding: 12px;">{{ $emp->first_name }} {{ $emp->last_name }}</td>
@@ -160,7 +155,7 @@
                                     <th style="padding: 12px; text-align: right;">الانصراف</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody id="history-tbody">
                                 @foreach($allHistory as $history)
                                     <tr style="border-bottom: 1px solid #eee;">
                                         <td style="padding: 12px;">{{ $history->employee->first_name }} {{ $history->employee->last_name }}</td>
@@ -171,11 +166,97 @@
                                 @endforeach
                             </tbody>
                         </table>
-                        <div style="padding: 15px;">{{ $allHistory->links() }}</div>
+                       @if($allHistory instanceof \Illuminate\Pagination\LengthAwarePaginator)
+                            <div style="padding: 15px;">{{ $allHistory->links() }}</div>
+                        @endif
                     </div>
                 </article>
             </section>
         @endif
     @endauth
 </div>
+<script>
+    // Function to update tables
+    function updateTables() {
+    // 1. الحصول على التاريخ الحالي المختار من حقل الإدخال في الصفحة
+    const dateInput = document.querySelector('input[name="date"]');
+    const selectedDate = dateInput ? dateInput.value : new Date().toISOString().split('T')[0];
+
+    // 2. تعديل الرابط ليرسل التاريخ (ويمكن للسيرفر استنتاج القسم من المستخدم المسجل)
+    // ملاحظة: السيرفر في Laravel سيعرف من هو "مدير القسم" تلقائياً عبر Session
+    fetch(`/face-attendance/latest?date=${selectedDate}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.data) {
+
+                // --- تحديث جدول الحاضرين ---
+                const presentTbody = document.getElementById('present-tbody');
+                if (presentTbody) {
+                    // نفلتر البيانات التي تحتوي على وقت حضور حقيقي
+                    const presentData = data.data.filter(r => r.check_in && r.check_in !== '--');
+
+                    presentTbody.innerHTML = ''; // مسح الجدول القديم
+
+                    presentData.forEach(record => {
+                        // داخل حلقة presentData.forEach
+                    presentTbody.innerHTML += `
+                        <tr style="border-bottom: 1px solid #f3f4f6; ${record.is_late ? 'background-color: #fff9f0;' : ''}">
+                            <td style="padding: 12px;">${record.employee_name}</td>
+                            <td style="padding: 12px;">${record.check_in}</td>
+                            <td style="padding: 12px;">${record.check_out || 'بانتظار الخروج'}</td>
+                            <td style="padding: 12px;">${record.work_hours}</td>
+                            <td style="padding: 12px;">
+                                <span class="badge" style="
+                                    padding: 4px 10px;
+                                    border-radius: 10px;
+                                    font-weight: bold;
+                                    background: ${record.is_late ? '#fef3c7' : (record.check_out ? '#dcfce7' : '#e0f2fe')};
+                                    color: ${record.is_late ? '#92400e' : (record.check_out ? '#166534' : '#0369a1')};
+                                ">
+                                    ${record.status}
+                                </span>
+                            </td>
+                        </tr>
+                    `;
+                    });
+                }
+
+                // --- تحديث إجمالي عدد الحضور في المربعات العلوية ---
+                const totalSpan = document.getElementById('total-present');
+                if (totalSpan) {
+                    const count = data.data.filter(r => r.check_in && r.check_in !== '--').length;
+                    totalSpan.innerText = count;
+                }
+
+                // --- تحديث جدول الأرشيف (اختياري التحديث اللحظي له) ---
+                const historyTbody = document.getElementById('history-tbody');
+                if (historyTbody) {
+                    historyTbody.innerHTML = '';
+                    data.data.forEach(record => {
+                        historyTbody.innerHTML += `
+                            <tr style="border-bottom: 1px solid #eee;">
+                                <td style="padding: 12px;">${record.employee_name}</td>
+                                <td style="padding: 12px;">${record.date ? record.date.split('T')[0] : selectedDate}</td>
+                                <td style="padding: 12px;">${record.check_in || '--'}</td>
+                                <td style="padding: 12px;">${record.check_out || '--'}</td>
+                            </tr>
+                        `;
+                    });
+                }
+            }
+        })
+        .catch(error => console.error('خطأ في جلب بيانات البصمة:', error));
+}
+
+// تعديل وقت التحديث ليكون منطقياً (كل 10 ثوانٍ بدلاً من ثانية واحدة لتخفيف الضغط)
+updateTables();
+let attendanceInterval = setInterval(updateTables, 10000);
+
+// التحديث عند العودة للتبويب
+document.addEventListener('visibilitychange', function() {
+    if (!document.hidden) {
+        updateTables();
+    }
+});
+</script>
 @endsection
