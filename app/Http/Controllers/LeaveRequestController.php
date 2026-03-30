@@ -90,7 +90,6 @@ class LeaveRequestController extends Controller
     $query = LeaveRequest::with(['employee.department', 'leaveType']);
 
     if ($role === 'مدير القسم') {
-        // تأمين: جلب رقم القسم من سجل الموظف المرتبط بالمدير
         $deptId = $user->employee->department_id ?? null;
 
         if ($deptId) {
@@ -98,26 +97,35 @@ class LeaveRequestController extends Controller
                 $q->where('department_id', $deptId);
             });
         } else {
-            // في حال فشل جلب القسم، نعيد نتائج فارغة لمدير القسم
-            return view('dashbord.leave', [
-                'allLeaves' => collect([]),
-                'stats' => ['pending' => 0, 'approved' => 0, 'rejected' => 0, 'total' => 0]
+            // في حال عدم وجود قسم، نرسل كل المتغيرات فارغة لمنع انهيار الـ Blade
+            return view('dashbord.attendance', [
+                'data' => collect([]),
+                'stats' => ['pending' => 0, 'approved' => 0, 'rejected' => 0, 'total' => 0],
+                'employees' => collect([]),
+                'allHistory' => collect([]),
+                'date' => now()->toDateString()
             ])->with('error', 'لم يتم العثور على قسم مرتبط بحسابك.');
         }
     }
 
-    $allLeaves = $query->latest()->get();
+    // 2. جلب البيانات وتسميتها $data لتتوافق مع ملف الـ Blade الخاص بك
+    $data = $query->latest()->get();
 
-    // 2. تحديث الإحصائيات (نستخدم نفس الـ Query لضمان السرعة والدقة)
+    // 3. تحديث الإحصائيات
     $stats = [
-        'pending'  => $allLeaves->where('status', 'pending')->count(),
-        'approved' => $allLeaves->where('status', 'approved')->count(),
-        'rejected' => $allLeaves->where('status', 'rejected')->count(),
-        'total'    => $allLeaves->count(),
+        'pending'  => $data->where('status', 'pending')->count(),
+        'approved' => $data->where('status', 'approved')->count(),
+        'rejected' => $data->where('status', 'rejected')->count(),
+        'total'    => $data->count(),
     ];
 
+    // 4. متغيرات صمام الأمان (لمنع أخطاء الـ Blade المشتركة)
     $employees = collect([]);
-    return view('dashbord.leave', compact('allLeaves', 'stats', 'employees'));
+    $allHistory = collect([]);
+    $date = now()->toDateString();
+
+    // 5. التعديل الجوهري: إرسال $data والمجموعات الأخرى ليعمل الجدول
+    return view('dashbord.attendance', compact('data', 'stats', 'date', 'employees', 'allHistory'));
 }
     /**
      * تحديث حالة الطلب (موافقة / رفض) من قبل المدير

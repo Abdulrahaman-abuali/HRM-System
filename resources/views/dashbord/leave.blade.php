@@ -166,7 +166,9 @@
                                 @endforeach
                             </tbody>
                         </table>
-                        <div style="padding: 15px;">{{ $allHistory->links() }}</div>
+                       @if($allHistory instanceof \Illuminate\Pagination\LengthAwarePaginator)
+                            <div style="padding: 15px;">{{ $allHistory->links() }}</div>
+                        @endif
                     </div>
                 </article>
             </section>
