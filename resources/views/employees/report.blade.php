@@ -19,8 +19,8 @@
 
         /* تنسيق الحالات */
         .badge { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; }
-        .badge-active { background-color: #dcfce7; color: #166534; } /* أخضر للنشط */
-        .badge-inactive { background-color: #fee2e2; color: #991b1b; } /* أحمر للموقوف */
+        .badge-active { background-color: #dcfce7; color: #166534; }
+        .badge-inactive { background-color: #fee2e2; color: #991b1b; }
 
         .footer-sigs { margin-top: 5rem; display: flex; justify-content: space-around; }
         .sig-box { text-align: center; width: 250px; border-top: 1px dashed #6b7280; padding-top: 10px; font-weight: bold; }
@@ -53,33 +53,82 @@
         <div style="border: 1px solid #e5e7eb; border-radius: 0.75rem; overflow: hidden; background: #fff;">
             <table class="table">
                 <thead>
-                    <tr>
+                    32
                         <th style="width: 10%;">رقم الموظف</th>
-                        <th style="width: 20%;">الاسم الكامل</th>
-                        <th style="width: 15%;">القسم</th>
+                        <th style="width: 18%;">الاسم الكامل</th>
+                        <th style="width: 12%;">القسم</th>
                         <th style="width: 15%;">المسمى الوظيفي</th>
-                        <th style="width: 15%;">المدير المباشر</th>
+                        <th style="width: 20%;">المدير المباشر (مدير القسم)</th>
                         <th style="width: 12%;">الهاتف</th>
-                        <th style="width: 13%; background: #eef2ff; text-align: center;">الحالة</th>
-                        <th style="width: 15%; background: #eef2ff; text-align: center;">تاريخ التعيين</th>
+                        <th style="width: 10%;">الحالة</th>
+                        <th style="width: 13%;">تاريخ التعيين</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach($data as $employee)
+                        @php
+                            // تحديد المدير الفعلي حسب الصلاحية
+                            $actualManager = null;
+
+                            // 1. إذا كان الموظف لديه مدير مخزن في manager_id
+                            if ($employee->manager_id) {
+                                $manager = \App\Models\Employee::with('user.role')->find($employee->manager_id);
+                                // تحقق إذا كان المدير المخزن لديه صلاحية "مدير القسم"
+                                if ($manager && $manager->user && $manager->user->role &&
+                                    $manager->user->role->name === 'مدير القسم') {
+                                    $actualManager = $manager;
+                                }
+                            }
+
+                            // 2. إذا لم يتم العثور على مدير صالح، ابحث عن مدير القسم الفعلي في نفس القسم
+                            if (!$actualManager && $employee->department_id) {
+                                $actualManager = \App\Models\Employee::where('department_id', $employee->department_id)
+                                    ->whereHas('user.role', function($q) {
+                                        $q->where('name', 'مدير القسم');
+                                    })
+                                    ->first();
+                            }
+
+                            $status = strtolower($employee->status ?? 'active');
+                            $is_active = in_array($status, ['active', 'نشط', '1', 1]);
+                        @endphp
                         <tr>
                             <td><strong style="color: #4f46e5;">ID-{{ $employee->id }}</strong></td>
-                            <td style="font-weight: 600;">{{ $employee->first_name }} {{ $employee->last_name }}</td>
+                            <td style="font-weight: 600;">
+                                {{ $employee->first_name }} {{ $employee->last_name }}
+                                @if($employee->user && $employee->user->role && $employee->user->role->name === 'مدير القسم')
+                                    <span style="background: #10b981; color: white; padding: 2px 6px; border-radius: 12px; font-size: 10px; margin-right: 5px;">
+                                        مدير فعلي
+                                    </span>
+                                @endif
+                            </td>
                             <td>{{ $employee->department->name ?? '---' }}</td>
-                            {{-- عرض المسمى الوظيفي --}}
-                            <td style="color: #4b5563;">{{ $employee->jobTitle->name ?? '---' }}</td>
-                             <td>{{ $employee->manager->first_name ?? 'لا يوجد مدير مباشر' }} {{ $employee->manager->last_name ?? '' }}</td>
+                            <td style="color: #4b5563;">
+                                {{ $employee->jobTitle->name ?? '---' }}
+                                @if(($employee->jobTitle->name ?? '') && str_contains($employee->jobTitle->name, 'مدير') &&
+                                    !($employee->user && $employee->user->role && $employee->user->role->name === 'مدير القسم'))
+                                    <span style="background: #f59e0b; color: white; padding: 2px 6px; border-radius: 12px; font-size: 10px; margin-right: 5px;">
+                                        صلاحيات محدودة
+                                    </span>
+                                @endif
+                            </td>
+                            <td>
+                                @if($actualManager)
+                                    <div style="font-weight: 600; color: #1f2937;">
+                                        {{ $actualManager->first_name }} {{ $actualManager->last_name }}
+                                    </div>
+                                    <div style="font-size: 10px; color: #6b7280; margin-top: 2px;">
+                                        {{ $actualManager->jobTitle->name ?? '' }}
+                                        <span style="background: #eef2ff; padding: 2px 6px; border-radius: 12px; margin-right: 5px;">
+                                            {{ $actualManager->user->role->name ?? '' }}
+                                        </span>
+                                    </div>
+                                @else
+                                    <span style="color: #9ca3af;">لا يوجد مدير معين</span>
+                                @endif
+                            </td>
                             <td dir="ltr" style="text-align: right;">{{ $employee->phone ?? '---' }}</td>
-                            {{-- عرض الحالة بشكل ملون --}}
                             <td style="text-align: center;">
-                                @php
-                                    $status = strtolower($employee->status ?? 'active');
-                                    $is_active = in_array($status, ['active', 'نشط', '1', 1]);
-                                @endphp
                                 <span class="badge {{ $is_active ? 'badge-active' : 'badge-inactive' }}">
                                     {{ $is_active ? 'على رأس العمل' : 'موقوف' }}
                                 </span>
