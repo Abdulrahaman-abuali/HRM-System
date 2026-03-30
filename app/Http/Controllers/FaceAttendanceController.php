@@ -59,7 +59,7 @@ class FaceAttendanceController extends Controller
                     ['check_in' => $now]
                 );
                 // عند نجاح تسجيل البصمة
-               
+
                 return response()->json([
                     'success' => true,
                     'message' => 'تم تسجيل حضور ' . $employeeName . ' بنجاح',
@@ -203,46 +203,67 @@ class FaceAttendanceController extends Controller
     /**
  * جلب آخر تسجيلات الحضور (للتحديث التلقائي)
  */
-public function getLatestAttendance()
-{
-    try {
-        $today = Carbon::now()->format('Y-m-d');
+    public function getLatestAttendance(Request $request)
+    {
+        try {
+            $user = \Illuminate\Support\Facades\Auth::user();
+            $role = $user->role?->name;
 
-        $attendance = AttendanceRecord::with('employee')
-            ->whereDate('date', $today)  // فقط حضور اليوم
-            ->orderBy('created_at', 'desc')
-            ->take(10)
-            ->get()
-            ->map(function ($record) {
-                $workHours = '—';
-                if ($record->check_in && $record->check_out) {
-                    $workHours = \Carbon\Carbon::parse($record->check_in)
-                        ->diff(\Carbon\Carbon::parse($record->check_out))
-                        ->format('%h س و %i د');
+            // جلب التاريخ من الطلب (Request) أو استخدام تاريخ اليوم كافتراضي
+            $selectedDate = $request->input('date', \Carbon\Carbon::now()->format('Y-m-d'));
+
+            // 1. بناء الاستعلام مع علاقة الموظف
+            $query = AttendanceRecord::with('employee')
+                ->whereDate('date', $selectedDate);
+
+            // 2. ✨ الفلترة الجوهرية لمدير القسم
+            if ($role === 'مدير القسم') {
+                $deptId = $user->employee->department_id ?? null;
+
+                if ($deptId) {
+                    // نجلب فقط السجلات التي ينتمي موظفوها لقسم هذا المدير
+                    $query->whereHas('employee', function($q) use ($deptId) {
+                        $q->where('department_id', $deptId);
+                    });
+                } else {
+                    // إذا لم يكن للمدير قسم مرتب، نعيد بيانات فارغة للأمان
+                    return response()->json(['success' => true, 'data' => [], 'count' => 0]);
                 }
+            }
 
-                return [
-                    'id' => $record->id,
-                    'employee_name' => $record->employee->first_name . ' ' . $record->employee->last_name,
-                    'check_in' => $record->check_in ? date('H:i:s', strtotime($record->check_in)) : '--',
-                    'check_out' => $record->check_out ? date('H:i:s', strtotime($record->check_out)) : '--',
-                    'date' => $record->date,
-                    'work_hours' => $workHours,
-                    'status' => $record->check_out ? 'مكتمل' : 'على رأس العمل'
-                ];
-            });
+            // 3. جلب البيانات وترتيبها
+            $attendance = $query->orderBy('created_at', 'desc')
+                ->get()
+                ->map(function ($record) {
+                    $workHours = '—';
+                    if ($record->check_in && $record->check_out) {
+                        $workHours = \Carbon\Carbon::parse($record->check_in)
+                            ->diff(\Carbon\Carbon::parse($record->check_out))
+                            ->format('%h س و %i د');
+                    }
 
-        return response()->json([
-            'success' => true,
-            'data' => $attendance,
-            'count' => $attendance->count()
-        ]);
+                    return [
+                        'id' => $record->id,
+                        'employee_name' => ($record->employee->first_name ?? 'موظف') . ' ' . ($record->employee->last_name ?? 'محذوف'),
+                        'check_in' => $record->check_in ? date('H:i:s', strtotime($record->check_in)) : '--',
+                        'check_out' => $record->check_out ? date('H:i:s', strtotime($record->check_out)) : '--',
+                        'date' => $record->date,
+                        'work_hours' => $workHours,
+                        'status' => $record->check_out ? 'مكتمل' : 'على رأس العمل'
+                    ];
+                });
 
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'message' => $e->getMessage()
-        ], 500);
+            return response()->json([
+                'success' => true,
+                'data' => $attendance,
+                'count' => $attendance->count()
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'حدث خطأ في جلب البيانات' // نص عام للأمان، ويمكنك ترك $e->getMessage() للتطوير
+            ], 500);
+        }
     }
-}
 }

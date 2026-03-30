@@ -191,7 +191,7 @@ class PagesController extends Controller
     ];
 
     $allLeaves = collect([]);
-    $stats = ['pending' => 0, 'approved' => 0, 'rejected' => 0, 'total' => 0];
+    
 
     return view('dashbord.leave', compact('employees', 'allHistory', 'date', 'stats', 'allLeaves'));
 }

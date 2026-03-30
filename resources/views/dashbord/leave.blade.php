@@ -53,7 +53,7 @@
         {{-- ================================================= --}}
         {{-- 2. واجهة المدير: حالة اليوم (الحضور والغياب) + الأرشيف --}}
         {{-- ================================================= --}}
-        @elseif(auth()->user()->role?->name === 'مدير النظام')
+        @elseif(in_array(auth()->user()->role?->name, ['مدير النظام', 'مدير القسم']))
             @php
                 $presentToday = $employees->filter(fn($e) => $e->attendanceRecords->isNotEmpty());
                 $absentToday = $employees->filter(fn($e) => $e->attendanceRecords->isEmpty());
@@ -178,64 +178,78 @@
 <script>
     // Function to update tables
     function updateTables() {
-        fetch('/face-attendance/latest')
-            .then(response => response.json())
-            .then(data => {
-                if (data.success && data.data) {
-                    // Update present table
-                    const presentTbody = document.getElementById('present-tbody');
-                    if (presentTbody) {
-                        const presentData = data.data.filter(r => r.check_in !== '--');
-                        presentTbody.innerHTML = '';
-                        presentData.forEach(record => {
-                            presentTbody.innerHTML += `
-                                <tr style="border-bottom: 1px solid #f3f4f6;">
-                                    <td style="padding: 12px;">${record.employee_name}</td>
-                                    <td style="padding: 12px;">${record.check_in}</td>
-                                    <td style="padding: 12px;">${record.check_out || 'بانتظار الخروج'}</td>
-                                    <td style="padding: 12px;">${record.work_hours}</td>
-                                    <td style="padding: 12px;"><span class="badge" style="background: #dcfce7; color: #166534; padding: 4px 10px;">${record.status}</span></td>
-                                </tr>
-                            `;
-                        });
-                    }
+    // 1. الحصول على التاريخ الحالي المختار من حقل الإدخال في الصفحة
+    const dateInput = document.querySelector('input[name="date"]');
+    const selectedDate = dateInput ? dateInput.value : new Date().toISOString().split('T')[0];
 
-                    // Update history table
-                    const historyTbody = document.getElementById('history-tbody');
-                    if (historyTbody) {
-                        historyTbody.innerHTML = '';
-                        data.data.forEach(record => {
-                            historyTbody.innerHTML += `
-                                <tr style="border-bottom: 1px solid #eee;">
-                                    <td style="padding: 12px;">${record.employee_name}</td>
-                                    <td style="padding: 12px;">${record.date.split('T')[0]}</td>
-                                    <td style="padding: 12px;">${record.check_in}</td>
-                                    <td style="padding: 12px;">${record.check_out || '—'}</td>
-                                </tr>
-                            `;
-                        });
-                    }
+    // 2. تعديل الرابط ليرسل التاريخ (ويمكن للسيرفر استنتاج القسم من المستخدم المسجل)
+    // ملاحظة: السيرفر في Laravel سيعرف من هو "مدير القسم" تلقائياً عبر Session
+    fetch(`/face-attendance/latest?date=${selectedDate}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.data) {
 
-                    // Update total present count
-                    const totalSpan = document.getElementById('total-present');
-                    if (totalSpan) {
-                        const count = data.data.filter(r => r.check_in !== '--').length;
-                        totalSpan.innerText = count;
-                    }
+                // --- تحديث جدول الحاضرين ---
+                const presentTbody = document.getElementById('present-tbody');
+                if (presentTbody) {
+                    // نفلتر البيانات التي تحتوي على وقت حضور حقيقي
+                    const presentData = data.data.filter(r => r.check_in && r.check_in !== '--');
+
+                    presentTbody.innerHTML = ''; // مسح الجدول القديم
+
+                    presentData.forEach(record => {
+                        presentTbody.innerHTML += `
+                            <tr style="border-bottom: 1px solid #f3f4f6;">
+                                <td style="padding: 12px;">${record.employee_name}</td>
+                                <td style="padding: 12px;">${record.check_in}</td>
+                                <td style="padding: 12px;">${record.check_out || '<span style="color:orange">بانتظار الخروج</span>'}</td>
+                                <td style="padding: 12px;">${record.work_hours || '--'}</td>
+                                <td style="padding: 12px;">
+                                    <span class="badge" style="background: ${record.check_out ? '#dcfce7' : '#fef3c7'}; color: ${record.check_out ? '#166534' : '#92400e'}; padding: 4px 10px; border-radius: 10px;">
+                                        ${record.check_out ? 'مكتمل' : 'على رأس العمل'}
+                                    </span>
+                                </td>
+                            </tr>
+                        `;
+                    });
                 }
-            })
-            .catch(error => console.log('Error:', error));
+
+                // --- تحديث إجمالي عدد الحضور في المربعات العلوية ---
+                const totalSpan = document.getElementById('total-present');
+                if (totalSpan) {
+                    const count = data.data.filter(r => r.check_in && r.check_in !== '--').length;
+                    totalSpan.innerText = count;
+                }
+
+                // --- تحديث جدول الأرشيف (اختياري التحديث اللحظي له) ---
+                const historyTbody = document.getElementById('history-tbody');
+                if (historyTbody) {
+                    historyTbody.innerHTML = '';
+                    data.data.forEach(record => {
+                        historyTbody.innerHTML += `
+                            <tr style="border-bottom: 1px solid #eee;">
+                                <td style="padding: 12px;">${record.employee_name}</td>
+                                <td style="padding: 12px;">${record.date ? record.date.split('T')[0] : selectedDate}</td>
+                                <td style="padding: 12px;">${record.check_in || '--'}</td>
+                                <td style="padding: 12px;">${record.check_out || '--'}</td>
+                            </tr>
+                        `;
+                    });
+                }
+            }
+        })
+        .catch(error => console.error('خطأ في جلب بيانات البصمة:', error));
+}
+
+// تعديل وقت التحديث ليكون منطقياً (كل 10 ثوانٍ بدلاً من ثانية واحدة لتخفيف الضغط)
+updateTables();
+let attendanceInterval = setInterval(updateTables, 10000);
+
+// التحديث عند العودة للتبويب
+document.addEventListener('visibilitychange', function() {
+    if (!document.hidden) {
+        updateTables();
     }
-
-    // Update immediately and every 5 seconds
-    updateTables();
-    setInterval(updateTables, 1000);
-
-    // Also update when page becomes visible again
-    document.addEventListener('visibilitychange', function() {
-        if (!document.hidden) {
-            updateTables();
-        }
-    });
+});
 </script>
 @endsection
