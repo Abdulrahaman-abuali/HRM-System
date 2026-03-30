@@ -235,23 +235,44 @@ class FaceAttendanceController extends Controller
             $attendance = $query->orderBy('created_at', 'desc')
                 ->get()
                 ->map(function ($record) {
-                    $workHours = '—';
-                    if ($record->check_in && $record->check_out) {
-                        $workHours = \Carbon\Carbon::parse($record->check_in)
-                            ->diff(\Carbon\Carbon::parse($record->check_out))
-                            ->format('%h س و %i د');
-                    }
+                $workHours = '—';
+                $delayTime = '—';
+                $officialStartTime = '08:00:00'; // 🕒 وقت بداية الدوام الرسمي
 
-                    return [
-                        'id' => $record->id,
-                        'employee_name' => ($record->employee->first_name ?? 'موظف') . ' ' . ($record->employee->last_name ?? 'محذوف'),
-                        'check_in' => $record->check_in ? date('H:i:s', strtotime($record->check_in)) : '--',
-                        'check_out' => $record->check_out ? date('H:i:s', strtotime($record->check_out)) : '--',
-                        'date' => $record->date,
-                        'work_hours' => $workHours,
-                        'status' => $record->check_out ? 'مكتمل' : 'على رأس العمل'
-                    ];
-                });
+                // 1. حساب ساعات العمل (إذا انصرف)
+                if ($record->check_in && $record->check_out) {
+                    $workHours = \Carbon\Carbon::parse($record->check_in)
+                        ->diff(\Carbon\Carbon::parse($record->check_out))
+                        ->format('%h س و %i د');
+                }
+
+                // 2. حساب التأخير (مقارنة الحضور بالوقت الرسمي)
+                if ($record->check_in) {
+                    $checkInTime = date('H:i:s', strtotime($record->check_in));
+                    if ($checkInTime > $officialStartTime) {
+                        $delay = \Carbon\Carbon::parse($officialStartTime)
+                            ->diff(\Carbon\Carbon::parse($checkInTime));
+                        $delayTime = $delay->format('%h س و %i د');
+                    }
+                }
+
+                // 3. تحديد الحالة اللونية
+                $status = $record->check_out ? 'مكتمل' : 'على رأس العمل';
+                if ($delayTime !== '—') {
+                    $status = 'متأخر (' . $delayTime . ')';
+                }
+
+                return [
+                    'id' => $record->id,
+                    'employee_name' => $record->employee->first_name . ' ' . $record->employee->last_name,
+                    'check_in' => $record->check_in ? date('H:i:s', strtotime($record->check_in)) : '--',
+                    'check_out' => $record->check_out ? date('H:i:s', strtotime($record->check_out)) : '--',
+                    'delay' => $delayTime, // حقل جديد
+                    'work_hours' => $workHours,
+                    'status' => $status,
+                    'is_late' => ($delayTime !== '—') // علامة لتمييز اللون في JS
+                ];
+            });
 
             return response()->json([
                 'success' => true,

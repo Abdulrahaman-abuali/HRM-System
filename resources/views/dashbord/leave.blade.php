@@ -198,19 +198,26 @@
                     presentTbody.innerHTML = ''; // مسح الجدول القديم
 
                     presentData.forEach(record => {
-                        presentTbody.innerHTML += `
-                            <tr style="border-bottom: 1px solid #f3f4f6;">
-                                <td style="padding: 12px;">${record.employee_name}</td>
-                                <td style="padding: 12px;">${record.check_in}</td>
-                                <td style="padding: 12px;">${record.check_out || '<span style="color:orange">بانتظار الخروج</span>'}</td>
-                                <td style="padding: 12px;">${record.work_hours || '--'}</td>
-                                <td style="padding: 12px;">
-                                    <span class="badge" style="background: ${record.check_out ? '#dcfce7' : '#fef3c7'}; color: ${record.check_out ? '#166534' : '#92400e'}; padding: 4px 10px; border-radius: 10px;">
-                                        ${record.check_out ? 'مكتمل' : 'على رأس العمل'}
-                                    </span>
-                                </td>
-                            </tr>
-                        `;
+                        // داخل حلقة presentData.forEach
+                    presentTbody.innerHTML += `
+                        <tr style="border-bottom: 1px solid #f3f4f6; ${record.is_late ? 'background-color: #fff9f0;' : ''}">
+                            <td style="padding: 12px;">${record.employee_name}</td>
+                            <td style="padding: 12px;">${record.check_in}</td>
+                            <td style="padding: 12px;">${record.check_out || 'بانتظار الخروج'}</td>
+                            <td style="padding: 12px;">${record.work_hours}</td>
+                            <td style="padding: 12px;">
+                                <span class="badge" style="
+                                    padding: 4px 10px;
+                                    border-radius: 10px;
+                                    font-weight: bold;
+                                    background: ${record.is_late ? '#fef3c7' : (record.check_out ? '#dcfce7' : '#e0f2fe')};
+                                    color: ${record.is_late ? '#92400e' : (record.check_out ? '#166534' : '#0369a1')};
+                                ">
+                                    ${record.status}
+                                </span>
+                            </td>
+                        </tr>
+                    `;
                     });
                 }
 
