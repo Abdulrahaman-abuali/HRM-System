@@ -151,6 +151,9 @@ class EmployeeController extends Controller
                     'contract_end_date'   => $request->employment_type === 'contract' ? 'required|date|after:contract_start_date' : 'nullable',
                     'hire_date'       => now()->format('Y-m-d'), // تاريخ اليوم تلقائياً
                     'status'          => 'نشط',
+                    'basic_salary'    => $validated['basic_salary'],
+                    'housing_percentage' => $request->input('housing_percentage', 0),
+                    'transport_percentage' => $request->input('transport_percentage', 0),
                 ]);
 
                 // 5. معالجة وحفظ الصورة الشخصية (تسمية بالـ ID)
@@ -222,7 +225,7 @@ class EmployeeController extends Controller
     /**
      * تحديث بيانات الموظف
      */
-  public function update(Request $request, $id)
+public function update(Request $request, $id)
 {
     $employee = Employee::with(['salary', 'user'])->findOrFail($id);
 
@@ -246,7 +249,10 @@ class EmployeeController extends Controller
         'profile_image'   => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         'contract_start_date' => $request->employment_type === 'contract' ? 'required|date' : 'nullable',
         'contract_end_date'   => $request->employment_type === 'contract' ? 'required|date|after:contract_start_date' : 'nullable',
-        'role_id'         => 'required|exists:roles,id', // أصبح مطلوباً
+        'role_id'         => 'required|exists:roles,id',
+        // ✅ أضف هذين الحقلين للتحقق
+        'housing_percentage' => 'nullable|numeric|min:0|max:100',
+        'transport_percentage' => 'nullable|numeric|min:0|max:100',
     ]);
 
     try {
@@ -267,13 +273,19 @@ class EmployeeController extends Controller
                 'job_title_id'    => $validated['job_title_id'],
                 'contract_start_date' => $request->employment_type == 'contract' ? $validated['contract_start_date'] : null,
                 'contract_end_date'   => $request->employment_type == 'contract' ? $validated['contract_end_date'] : null,
+                // ✅ أضف هذه الأسطر
+                'basic_salary'    => $validated['basic_salary'],
+                'housing_percentage' => $request->input('housing_percentage', $employee->housing_percentage ?? 10),
+                'transport_percentage' => $request->input('transport_percentage', $employee->transport_percentage ?? 5),
             ]);
 
             // 2. معالجة الصورة
             if ($request->hasFile('profile_image')) {
                 if ($employee->profile_image) {
                     $oldPath = storage_path('app/employee_faces/' . $employee->profile_image);
-                    if (file_exists($oldPath)) { unlink($oldPath); }
+                    if (file_exists($oldPath)) {
+                        unlink($oldPath);
+                    }
                 }
                 $image = $request->file('profile_image');
                 $fileName = $employee->id . '.' . $image->getClientOriginalExtension();
@@ -281,9 +293,10 @@ class EmployeeController extends Controller
                 $employee->update(['profile_image' => $fileName]);
             }
 
-            // 3. تحديث الراتب
-            if ($employee->salary) {
-                $employee->salary->update(['basic_salary' => $validated['basic_salary']]);
+            // 3. تحديث الراتب (آخر راتب للموظف)
+            $lastSalary = Salary::where('employee_id', $employee->id)->latest()->first();
+            if ($lastSalary) {
+                $lastSalary->update(['basic_salary' => $validated['basic_salary']]);
             } else {
                 \App\Models\Salary::create([
                     'employee_id'  => $employee->id,
@@ -305,13 +318,13 @@ class EmployeeController extends Controller
             $newJobTitle = \App\Models\JobTitle::find($validated['job_title_id']);
             $isManagerNow = $newJobTitle && str_contains($newJobTitle->name, 'مدير');
             $wasManagerBefore = $oldJobTitleId && \App\Models\JobTitle::find($oldJobTitleId)?->name ?
-                                str_contains(\App\Models\JobTitle::find($oldJobTitleId)->name, 'مدير') : false;
+                str_contains(\App\Models\JobTitle::find($oldJobTitleId)->name, 'مدير') : false;
 
             // 6. منع وجود مديرين في نفس القسم
             if ($isManagerNow) {
                 $existingManager = \App\Models\Employee::where('department_id', $validated['department_id'])
                     ->where('id', '!=', $employee->id)
-                    ->whereHas('jobTitle', function($q) {
+                    ->whereHas('jobTitle', function ($q) {
                         $q->where('name', 'like', '%مدير%');
                     })
                     ->exists();
@@ -323,27 +336,23 @@ class EmployeeController extends Controller
 
             // 7. الحالة 1: تمت إزالة صلاحية المدير (كان مديراً والآن ليس مديراً)
             if ($wasManagerBefore && !$isManagerNow) {
-                // إعادة تعيين manager_id لجميع الموظفين الذين كانوا تحت إدارته
                 \App\Models\Employee::where('manager_id', $employee->id)
                     ->update(['manager_id' => null]);
             }
 
             // 8. الحالة 2: أصبح مديراً جديداً (لم يكن مديراً والآن أصبح مديراً)
             if (!$wasManagerBefore && $isManagerNow) {
-                // جعل هذا الموظف مديراً لجميع موظفي قسمه
                 \App\Models\Employee::where('department_id', $validated['department_id'])
                     ->where('id', '!=', $employee->id)
                     ->update(['manager_id' => $employee->id]);
             }
 
-            // 9. الحالة 3: تغيير القسم لمدير قائم (كان مديراً ونقل لقسم آخر)
+            // 9. الحالة 3: تغيير القسم لمدير قائم
             if ($wasManagerBefore && $isManagerNow && $oldDepartmentId != $validated['department_id']) {
-                // إزالة الموظفين القدامى من تحت إدارته
                 \App\Models\Employee::where('manager_id', $employee->id)
                     ->where('department_id', $oldDepartmentId)
                     ->update(['manager_id' => null]);
 
-                // إضافة الموظفين الجدد تحت إدارته
                 \App\Models\Employee::where('department_id', $validated['department_id'])
                     ->where('id', '!=', $employee->id)
                     ->update(['manager_id' => $employee->id]);
@@ -351,7 +360,6 @@ class EmployeeController extends Controller
         });
 
         return redirect()->route('employees.index')->with('success', 'تم تحديث بيانات الموظف بنجاح');
-
     } catch (\Exception $e) {
         return back()->withInput()->with('error', 'فشل التحديث: ' . $e->getMessage());
     }

@@ -166,24 +166,40 @@
                             <div class="form-group" style="grid-column: span 2;">
                                 <label for="basic_salary" class="form-label">الراتب الأساسي (ر.ي)</label>
                                 <input type="number" step="0.001" id="basic_salary" name="basic_salary"
+                                    class="form-control" value="{{ old('basic_salary', $employee->basic_salary ?? '') }}"
+                                    required>
+                            </div>
+                            <div class="form-group">
+                                <label for="housing_percentage">بدل السكن (%)</label>
+                                <input type="number" step="0.1" id="housing_percentage" name="housing_percentage"
                                     class="form-control"
-                                    value="{{ old('basic_salary', $employee->salary->basic_salary ?? '') }}" required>
+                                    value="{{ old('housing_percentage', $employee->housing_percentage ?? 10) }}">
+                                <small class="text-muted">نسبة مئوية من الراتب الأساسي</small>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="transport_percentage">بدل المواصلات (%)</label>
+                                <input type="number" step="0.1" id="transport_percentage"
+                                    name="transport_percentage" class="form-control"
+                                    value="{{ old('transport_percentage', $employee->transport_percentage ?? 5) }}">
+                                <small class="text-muted">نسبة مئوية من الراتب الأساسي</small>
+                            </div>
+                            <div class="form-group" style="grid-column: span 2;">
+                                <label for="role_id" class="form-label">صلاحية النظام</label>
+                                <select id="role_id" name="role_id" class="form-control" required>
+                                    @foreach ($roles as $role)
+                                        <option value="{{ $role->id }}"
+                                            {{ old('role_id', $employee->user->role_id) == $role->id ? 'selected' : '' }}>
+                                            {{ $role->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <small class="form-text text-muted">تحديد الصلاحية يتحكم في ما يمكن للموظف رؤيته في
+                                    النظام</small>
                             </div>
                         </div>
                         {{-- بعد حقل basic_salary --}}
-                        <div class="form-group" style="grid-column: span 2;">
-                            <label for="role_id" class="form-label">صلاحية النظام</label>
-                            <select id="role_id" name="role_id" class="form-control" required>
-                                @foreach ($roles as $role)
-                                    <option value="{{ $role->id }}"
-                                        {{ old('role_id', $employee->user->role_id) == $role->id ? 'selected' : '' }}>
-                                        {{ $role->name }}
-                                    </option>
-                                @endforeach
-                            </select>
-                            <small class="form-text text-muted">تحديد الصلاحية يتحكم في ما يمكن للموظف رؤيته في
-                                النظام</small>
-                        </div>
+
                         <div class="form-actions" style="display: flex; gap: 1rem;">
                             <button type="submit" class="btn btn-primary" style="flex: 1;">تحديث بيانات الموظف</button>
                             <a href="{{ route('employees.index') }}" class="btn btn-outline"

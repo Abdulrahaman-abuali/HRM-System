@@ -21,21 +21,13 @@ use Illuminate\Database\Eloquent\Model;
  * @property int|null $job_title_id
  * @property string $hire_date
  * @property string $status
+ * @property decimal $basic_salary
+ * @property decimal $housing_percentage
+ * @property decimal $transport_percentage
  * @property string|null $face_encoding
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\AttendanceRecord> $attendanceRecords
- * @property-read int|null $attendance_records_count
- * @property-read \App\Models\Department|null $department
- * @property-read mixed $full_name
- * @property-read \App\Models\JobTitle|null $jobTitle
- * @property-read Employee|null $manager
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Salary> $salaries
- * @property-read int|null $salaries_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, Employee> $subordinates
- * @property-read int|null $subordinates_count
- * @property-read \App\Models\User $user
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Employee newModelQuery()
+  * @method static \Illuminate\Database\Eloquent\Builder<static>|Employee newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Employee newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Employee query()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Employee whereAddress($value)
@@ -79,11 +71,17 @@ class Employee extends Model
         'job_title_id',
         'hire_date',
         'status',
-        'face_encoding',  // أضفنا هذا الحقل
+        'face_encoding',
+        'basic_salary',           // ✅ جديد
+        'housing_percentage',     // ✅ جديد
+        'transport_percentage',   // ✅ جديد
     ];
 
     protected $casts = [
-        'face_encoding' => 'array',  // لتحويل JSON تلقائياً إلى مصفوفة
+        'face_encoding' => 'array',
+        'basic_salary' => 'decimal:2',
+        'housing_percentage' => 'decimal:2',
+        'transport_percentage' => 'decimal:2',
     ];
 
     // --- العلاقات الأساسية ---
@@ -105,17 +103,11 @@ class Employee extends Model
 
     // --- علاقة المدير المباشر ---
 
-    /**
-     * جلب بيانات المدير المباشر لهذا الموظف
-     */
     public function manager()
     {
         return $this->belongsTo(Employee::class, 'manager_id');
     }
 
-    /**
-     * جلب قائمة الموظفين الذين يشرف عليهم هذا الموظف
-     */
     public function subordinates()
     {
         return $this->hasMany(Employee::class, 'manager_id');
@@ -133,19 +125,13 @@ class Employee extends Model
         return $this->hasMany(Salary::class);
     }
 
-    /**
-     * دالة مساعدة للحصول على الاسم الكامل
-     */
     public function getFullNameAttribute()
     {
         return "{$this->first_name} {$this->last_name}";
     }
-    /**
- * علاقة الموظف بالراتب (كل موظف له سجل راتب أساسي)
- */
+
     public function salary()
     {
-        // العلاقة هي One-to-One (واحد لواحد)
         return $this->hasOne(Salary::class, 'employee_id');
     }
 }

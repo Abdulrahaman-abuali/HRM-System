@@ -11,6 +11,7 @@ use App\Http\Controllers\ReportsController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\FaceAttendanceController;
+use App\Http\Controllers\LoanRequestController;
 
 /*
 |--------------------------------------------------------------------------
@@ -24,8 +25,6 @@ Route::post('/login', [PagesController::class, 'login'])->name('login.submit');
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
 // مسارات نظام بصمة الوجه (API) - للأجهزة الخارجية
-
-// مجموعة مسارات نظام البصمة
 Route::prefix('face-attendance')->group(function () {
     Route::get('/face-data', [FaceAttendanceController::class, 'exportFaceData']);
     Route::get('/health', [FaceAttendanceController::class, 'health']);
@@ -33,8 +32,6 @@ Route::prefix('face-attendance')->group(function () {
     Route::post('/record', [FaceAttendanceController::class, 'record']);
     Route::get('/latest', [FaceAttendanceController::class, 'getLatestAttendance']);
 });
-
-/*
 
 /*
 |--------------------------------------------------------------------------
@@ -51,6 +48,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.readAll');
     Route::delete('/notifications/destroy-all', [NotificationController::class, 'destroyAll'])->name('notifications.deleteAll');
 
+    // ✅ مسارات طلبات القروض للموظفين
+    Route::get('/my-loans', [LoanRequestController::class, 'index'])->name('loans.my-requests');
+    Route::get('/my-loans/create', [LoanRequestController::class, 'create'])->name('loans.create');
+    Route::post('/my-loans', [LoanRequestController::class, 'store'])->name('loans.store');
 
     /*
     |--------------------------------------------------------------------------
@@ -63,35 +64,28 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/my-leaves', [LeaveRequestController::class, 'index'])->name('leaves.index');
         Route::post('/my-leaves', [LeaveRequestController::class, 'store'])->name('leaves.store');
         Route::get('/my-tasks', [TaskController::class, 'index'])->name('tasks.index');
-       Route::patch('/dashbord/tasks/{id}/update-status', [TaskController::class, 'updateStatus'])->name('tasks.updateStatus');
+        Route::patch('/dashbord/tasks/{id}/update-status', [TaskController::class, 'updateStatus'])->name('tasks.updateStatus');
     });
-
 
     /*
     |--------------------------------------------------------------------------
     | ب: مسارات الإدارة المشتركة (مدير النظام + مدير القسم)
     |--------------------------------------------------------------------------
-    | ملاحظة: مدير القسم هنا يملك صلاحية العرض والمتابعة فقط
     */
     Route::middleware(['role:مدير النظام,مدير القسم'])->group(function () {
-        // لوحات التحكم والتقارير
         Route::get('/dashbord', [PagesController::class, 'showDashboardPage'])->name('dashbord');
         Route::get('/manager/dashboard', [PagesController::class, 'showDashboardPage'])->name('employees.dashboard_mangers');
         Route::get('/leave-admin', [PagesController::class, 'showLeavePage'])->name('leave');
         Route::get('/attendance-admin', [PagesController::class, 'showAttendancePage'])->name('attendance');
 
-
         // إدارة الموظفين (عرض فقط)
         Route::get('/employees', [EmployeeController::class, 'index'])->name('employees.index');
 
-
-        // إدارة الإجازات والمهام (عرض واعتماد)
         Route::get('/admin/leaves', [LeaveRequestController::class, 'adminIndex'])->name('admin.leaves.index');
         Route::post('/admin/leaves/{id}/status', [LeaveRequestController::class, 'updateStatus'])->name('admin.leaves.status');
         Route::get('/admin/tasks', [TaskController::class, 'adminIndex'])->name('tasks.admin');
         Route::post('/tasks', [TaskController::class, 'store'])->name('tasks.store');
 
-        // أدوات الربط الديناميكي
         Route::get('/get-managers/{departmentId}', [EmployeeController::class, 'getManagers']);
     });
 
@@ -99,7 +93,6 @@ Route::middleware(['auth'])->group(function () {
     |--------------------------------------------------------------------------
     | ج: مسارات "مدير النظام" حصراً (التحكم الكامل)
     |--------------------------------------------------------------------------
-    | لا يمكن لمدير القسم الدخول لهذه المسارات نهائياً
     */
     Route::middleware(['role:مدير النظام'])->group(function () {
         // العمليات الحساسة للموظفين (CRUD)
@@ -126,7 +119,11 @@ Route::middleware(['auth'])->group(function () {
 
         // مسارات عامة أخرى
         Route::post('/notifications/send-general', [NotificationController::class, 'sendGeneralNotification'])->name('notifications.sendGeneral');
-        // توليد الرواتب الشهرية
         Route::post('/salaries/generate', [PagesController::class, 'generateMonthlySalaries'])->name('salaries.generate');
+
+        // ✅ مسارات إدارة طلبات القروض لمدير النظام
+        Route::get('/admin/loans', [LoanRequestController::class, 'adminIndex'])->name('loans.admin-requests');
+        Route::post('/admin/loans/{id}/approve', [LoanRequestController::class, 'approve'])->name('loans.approve');
+        Route::post('/admin/loans/{id}/reject', [LoanRequestController::class, 'reject'])->name('loans.reject');
     });
 });

@@ -202,24 +202,34 @@ class PagesController extends Controller
     {
         return view('dashbord.2');
     }
-    public function showAttendancePage()
-    {
-        // جلب البيانات مع العلاقات (Eloquent) لتعمل الأزرار
-        $data = \App\Models\LeaveRequest::with(['employee', 'leaveType'])->latest()->get();
+public function showAttendancePage()
+{
+    // طلبات الإجازات
+    $leaveRequests = \App\Models\LeaveRequest::with(['employee', 'leaveType'])->latest()->get();
 
-        // إرسال الإحصائيات المطلوبة للكروت العلوية في صفحة الإدارة
-        $stats = [
-            'pending'  => \App\Models\LeaveRequest::where('status', 'pending')->count(),
-            'approved' => \App\Models\LeaveRequest::where('status', 'approved')->count(),
-            'rejected' => \App\Models\LeaveRequest::where('status', 'rejected')->count(),
-            'total'    => \App\Models\LeaveRequest::count(),
-        ];
+    // طلبات القروض
+    $loanRequests = \App\Models\LoanRequest::with('employee')->latest()->get();
 
-        $title = "إدارة طلبات الإجازات";
+    // إحصائيات الإجازات
+    $leaveStats = [
+        'pending'  => \App\Models\LeaveRequest::where('status', 'pending')->count(),
+        'approved' => \App\Models\LeaveRequest::where('status', 'approved')->count(),
+        'rejected' => \App\Models\LeaveRequest::where('status', 'rejected')->count(),
+        'total'    => \App\Models\LeaveRequest::count(),
+    ];
 
-        // تأكد من توجيه العرض لملف الإدارة الأصلي وليس التقرير
-        return view('dashbord.attendance', compact('data', 'stats', 'title'));
-    }
+    // إحصائيات القروض
+    $loanStats = [
+        'pending'  => \App\Models\LoanRequest::where('status', 'pending')->count(),
+        'approved' => \App\Models\LoanRequest::where('status', 'approved')->count(),
+        'rejected' => \App\Models\LoanRequest::where('status', 'rejected')->count(),
+        'total'    => \App\Models\LoanRequest::count(),
+    ];
+
+    $title = "إدارة الطلبات";
+
+    return view('dashbord.attendance', compact('leaveRequests', 'loanRequests', 'leaveStats', 'loanStats', 'title'));
+}
     public function showSalariesPage(Request $request)
     {
         $user = Auth::user();
@@ -389,6 +399,20 @@ class PagesController extends Controller
             'paid_at' => now()
         ]);
 
+        // تحديث حالة القروض بعد دفع الراتب
+        $activeLoans = \App\Models\Loan::where('employee_id', $employee->id)
+            ->where('status', 'active')
+            ->get();
+
+        foreach ($activeLoans as $loan) {
+            $loan->paid_months++;
+            $loan->remaining_balance -= $loan->monthly_installment;
+
+            if ($loan->paid_months >= $loan->total_months) {
+                $loan->status = 'completed';
+            }
+            $loan->save();
+        }
         return back()->with('success', 'تم تأكيد دفع الراتب بنجاح.');
     }
 
@@ -416,6 +440,20 @@ class PagesController extends Controller
                 'paid_at' => now()
             ]);
 
+            // تحديث حالة القروض بعد دفع الراتب
+            $activeLoans = \App\Models\Loan::where('employee_id', $salary->employee_id)
+                ->where('status', 'active')
+                ->get();
+
+            foreach ($activeLoans as $loan) {
+                $loan->paid_months++;
+                $loan->remaining_balance -= $loan->monthly_installment;
+
+                if ($loan->paid_months >= $loan->total_months) {
+                    $loan->status = 'completed';
+                }
+                $loan->save();
+            }
             // إرسال إشعار لكل موظف
             if ($salary->employee) {
                 \App\Models\Notification::create([
@@ -449,9 +487,7 @@ class PagesController extends Controller
     /**
      * توليد رواتب الشهر تلقائياً (لجميع الموظفين النشطين)
      */
-    /**
-     * توليد رواتب الشهر تلقائياً (لجميع الموظفين النشطين)
-     */
+
     public function generateMonthlySalaries(Request $request)
     {
         // منع أي شخص غير المدير من استخدام هذه الدالة
@@ -485,16 +521,19 @@ class PagesController extends Controller
 
         foreach ($employees as $employee) {
             try {
-                // الحصول على آخر راتب للموظف (لجلب القيم الأساسية)
-                $lastSalary = Salary::where('employee_id', $employee->id)->latest()->first();
-                $basicSalary = $lastSalary->basic_salary ?? 5000;
+                // القيم من جدول الموظف
+                $basicSalary = $employee->basic_salary ?? 5000;
+                $housingPercentage = $employee->housing_percentage ?? 10;
+                $transportPercentage = $employee->transport_percentage ?? 5;
 
-                // القيم الأساسية (إذا لم يوجد راتب سابق، نستخدم قيماً افتراضية)
-                $basicSalary = $lastSalary->basic_salary ?? 5000;
-                $housingPercentage = $lastSalary->housing_percentage ?? 10;
-                $transportPercentage = $lastSalary->transport_percentage ?? 5;
-                $healthPercentage = $lastSalary->health_percentage ?? 3;
-                $taxPercentage = $lastSalary->tax_percentage ?? 2;
+                // ✅ التأمينات الاجتماعية (6% ثابتة)
+                $healthPercentage = config('salary.health_percentage', 6);
+
+                // ✅ ضريبة الدخل (نسب تصاعدية حسب القانون اليمني)
+                $monthlyTax = $this->calculateIncomeTax($basicSalary);
+
+                // تحويل الضريبة إلى نسبة مئوية للتخزين في tax_percentage
+                $taxPercentage = ($basicSalary > 0) ? ($monthlyTax / $basicSalary) * 100 : 0;
 
                 // حساب أيام الغياب الفعلية
                 $absenceDays = $calculationService->calculateActualAbsenceDays($employee->id, $year, $month);
@@ -502,9 +541,15 @@ class PagesController extends Controller
                 // حساب دقائق التأخير الفعلية
                 $lateMinutes = $calculationService->calculateActualLateMinutes($employee->id, $year, $month);
 
-                // حساب الخصومات
+                // حساب الخصومات (الغياب والتأخير)
                 $deductions = $calculationService->calculateDeductions($basicSalary, $absenceDays, $lateMinutes);
+                // حساب إجمالي أقساط القروض النشطة للموظف
+                $startOfMonth = sprintf('%d-%02d-01', $year, $month);
 
+                $totalLoanInstallment = \App\Models\Loan::where('employee_id', $employee->id)
+                    ->where('status', 'active')
+                    ->where('start_date', '<=', $startOfMonth)
+                    ->sum('monthly_installment');
                 // إنشاء سجل الراتب
                 Salary::create([
                     'employee_id' => $employee->id,
@@ -513,9 +558,9 @@ class PagesController extends Controller
                     'housing_percentage' => $housingPercentage,
                     'transport_percentage' => $transportPercentage,
                     'bonuses' => 0,
-                    'health_percentage' => $healthPercentage,
-                    'tax_percentage' => $taxPercentage,
-                    'loan_installments' => 0,
+                    'health_percentage' => $healthPercentage,      // تأمينات 6%
+                    'tax_percentage' => $taxPercentage,            // ضريبة كنسبة مئوية
+                    'loan_installments' => $totalLoanInstallment,
                     'penalties' => 0,
                     'absence_days' => $absenceDays,
                     'absence_deduction' => $deductions['absence_deduction'],
@@ -545,10 +590,54 @@ class PagesController extends Controller
                 $message .= " ولكن حدثت بعض الأخطاء: " . implode(', ', $errors);
             }
 
-            // إضافة selected_month إلى رابط التوجيه
             return redirect()->route('salaries', ['selected_month' => $selectedMonth])->with('success', $message);
         }
 
         return redirect()->route('salaries', ['selected_month' => $selectedMonth])->with('error', 'فشل توليد الرواتب. ' . implode(', ', $errors));
+    }
+    /**
+     * حساب ضريبة الدخل حسب الشرائح اليمنية مع الإعفاء الشخصي
+     *
+     * الإعفاء السنوي: 120,000 ريال للموظف نفسه
+     * الشرائح:
+     * - أول 120,000 ريال (بعد الإعفاء): 0%
+     * - من 120,001 إلى 240,000: 10%
+     * - أكثر من 240,000: 15%
+     *
+     * @param float $monthlySalary الراتب الشهري
+     * @return float قيمة الضريبة الشهرية
+     */
+    private function calculateIncomeTax($monthlySalary)
+    {
+        $annualSalary = $monthlySalary * 12;
+
+        // الإعفاء الشخصي السنوي
+        $personalExemption = 120000;
+
+        // الوعاء الخاضع للضريبة بعد خصم الإعفاء
+        $taxableIncome = max(0, $annualSalary - $personalExemption);
+
+        // إذا كان الوعاء صفراً
+        if ($taxableIncome <= 0) {
+            return 0;
+        }
+
+        // الشريحة الأولى: 0% على أول 120,000 من الوعاء
+        if ($taxableIncome <= 120000) {
+            return 0; // معفى
+        }
+
+        // الشريحة الثانية: 10% على أول 120,000 بعد الإعفاء
+        if ($taxableIncome <= 240000) {
+            $annualTax = 120000 * 0.10;
+            return round($annualTax / 12, 2);
+        }
+
+        // الشريحة الثالثة: 10% على أول 120,000 + 15% على الباقي
+        $taxOnSecondBracket = 12000; // 120,000 × 10%
+        $remaining = $taxableIncome - 240000;
+        $annualTax = $taxOnSecondBracket + ($remaining * 0.15);
+
+        return round($annualTax / 12, 2);
     }
 }

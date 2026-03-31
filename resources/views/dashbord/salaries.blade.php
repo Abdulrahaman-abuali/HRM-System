@@ -129,11 +129,11 @@
                                     <th>رقم الموظف</th>
                                     <th>الاسم</th>
                                     <th>الأساسي</th>
-                                    <th style="color: #10b981;">السكن</th>
-                                    <th style="color: #10b981;">المواصلات</th>
+                                    <th style="color: #10b981;">بدل السكن</th>
+                                    <th style="color: #10b981;">بدل المواصلات</th>
                                     <th style="color: #10b981;">المكافآت</th>
-                                    <th style="color: #ef4444;">التأمين</th>
-                                    <th style="color: #ef4444;">الضرائب</th>
+                                    <th style="color: #ef4444;">التأمينات (6%)</th>
+                                    <th style="color: #ef4444;">ضريبة الدخل</th>
                                     <th style="color: #f59e0b;">القروض</th>
                                     <th style="color: #ef4444;">الجزاءات</th>
                                     <th style="color: #f97316;">أيام الغياب</th>
@@ -152,6 +152,8 @@
                                     @php
                                         $salary = $emp->salaries->first();
                                         $basic = $salary->basic_salary ?? 0;
+                                        $socialInsurance = $basic * 0.06;
+                                        $incomeTaxAmount = $basic * (($salary->tax_percentage ?? 0) / 100);
                                     @endphp
                                     <tr>
                                         <td><span
@@ -166,17 +168,22 @@
                                             {{ number_format($basic * (($salary->transport_percentage ?? 0) / 100), 2) }}
                                         </td>
                                         <td style="color: #10b981; font-weight: bold;">
-                                            {{ number_format($salary->bonuses ?? 0, 2) }}</td>
+                                            {{ number_format($salary->bonuses ?? 0, 2) }}
+                                        </td>
                                         <td style="color: #ef4444;">
-                                            {{ number_format($basic * (($salary->health_percentage ?? 0) / 100), 2) }}</td>
+                                            {{ number_format($socialInsurance, 2) }}
+                                        </td>
                                         <td style="color: #ef4444;">
-                                            {{ number_format($basic * (($salary->tax_percentage ?? 0) / 100), 2) }}</td>
+                                            {{ number_format($incomeTaxAmount, 2) }}
+                                        </td>
                                         <td style="color: #f59e0b;">
-                                            {{ number_format($salary->loan_installments ?? 0, 2) }}</td>
+                                            {{ number_format($salary->loan_installments ?? 0, 2) }}
+                                        </td>
                                         <td style="color: #ef4444;">{{ number_format($salary->penalties ?? 0, 2) }}</td>
                                         <td style="text-align: center;">{{ $salary->absence_days ?? 0 }}</td>
                                         <td style="color: #f97316;">
-                                            {{ number_format($salary->absence_deduction ?? 0, 2) }}</td>
+                                            {{ number_format($salary->absence_deduction ?? 0, 2) }}
+                                        </td>
                                         <td style="text-align: center;">{{ $salary->late_minutes ?? 0 }}</td>
                                         <td style="color: #f97316;">{{ number_format($salary->late_deduction ?? 0, 2) }}
                                         </td>
@@ -202,7 +209,7 @@
                                                     @endif
                                                     <button class="btn btn-sm btn-primary"
                                                         style="background: #4f46e5; border:none;"
-                                                        onclick="openSalaryModal({{ json_encode($salary) }}, '{{ $emp->first_name }}', 'EMP-{{ $emp->id }}', '{{ $emp->department->name ?? '' }}')">
+                                                        onclick="openSalaryModal({{ json_encode($salary) }}, '{{ $emp->first_name }}', 'EMP-{{ $emp->id }}', '{{ $emp->department->name ?? '' }}', {{ json_encode($emp) }})">
                                                         تعديل
                                                     </button>
                                                 </div>
@@ -222,7 +229,7 @@
         </main>
     </div>
 
-    {{-- النافذة المنبثقة (Modal) لتعديل راتب موظف واحد (مبسطة) --}}
+    {{-- النافذة المنبثقة (Modal) لتعديل راتب موظف واحد --}}
     @if (auth()->user()->role->name === 'مدير النظام')
         <div id="salaryModal" class="modal"
             style="display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.5); overflow-y:auto;">
@@ -251,10 +258,8 @@
                                     id="display_housing_percent">0</span>%)</div>
                             <div><strong>🚗 بدل المواصلات:</strong> <span id="display_transport">0</span> ر.ي (<span
                                     id="display_transport_percent">0</span>%)</div>
-                            <div><strong>🏥 التأمين الصحي:</strong> <span id="display_health">0</span> ر.ي (<span
-                                    id="display_health_percent">0</span>%)</div>
-                            <div><strong>📊 الضريبة:</strong> <span id="display_tax">0</span> ر.ي (<span
-                                    id="display_tax_percent">0</span>%)</div>
+                            <div><strong>🏥 التأمينات الاجتماعية:</strong> <span id="display_insurance">0</span> ر.ي (6%)</div>
+                            <div><strong>📊 ضريبة الدخل:</strong> <span id="display_tax">0</span> ر.ي</div>
                         </div>
                     </div>
 
@@ -349,12 +354,6 @@
                             value="0">
                     </div>
 
-                    <div style="margin-bottom:15px;">
-                        <label class="form-label">💰 أقساط القروض (ر.ي) - تخصم للجميع</label>
-                        <input type="number" name="loan_installments" class="form-control" placeholder="0"
-                            step="0.01" value="0">
-                    </div>
-
                     <div style="margin-bottom:20px;">
                         <label class="form-label">⚠️ الجزاءات (ر.ي) - تخصم للجميع</label>
                         <input type="number" name="penalties" class="form-control" placeholder="0" step="0.01"
@@ -377,7 +376,7 @@
     @endif
 
     <script>
-        function openSalaryModal(salary, name, empCode, deptName) {
+        function openSalaryModal(salary, name, empCode, deptName, employeeData) {
             if (!document.getElementById('salaryUpdateForm')) return;
             document.getElementById('salaryUpdateForm').reset();
 
@@ -388,21 +387,20 @@
                 deptName;
             document.getElementById('modal_salary_id').value = salary ? salary.id : '';
 
-            if (salary) {
-                const basic = salary.basic_salary || 0;
+            if (salary && employeeData) {
+                const basic = employeeData.basic_salary || salary.basic_salary || 0;
+                const housingPercent = employeeData.housing_percentage || 10;
+                const transportPercent = employeeData.transport_percentage || 5;
+                const socialInsurance = basic * 0.06;
+                const incomeTaxAmount = basic * ((salary.tax_percentage ?? 0) / 100);
+
                 document.getElementById('display_basic').innerText = basic.toLocaleString();
-                document.getElementById('display_housing').innerText = (basic * (salary.housing_percentage || 0) / 100)
-                    .toLocaleString();
-                document.getElementById('display_housing_percent').innerText = salary.housing_percentage || 0;
-                document.getElementById('display_transport').innerText = (basic * (salary.transport_percentage || 0) / 100)
-                    .toLocaleString();
-                document.getElementById('display_transport_percent').innerText = salary.transport_percentage || 0;
-                document.getElementById('display_health').innerText = (basic * (salary.health_percentage || 0) / 100)
-                    .toLocaleString();
-                document.getElementById('display_health_percent').innerText = salary.health_percentage || 0;
-                document.getElementById('display_tax').innerText = (basic * (salary.tax_percentage || 0) / 100)
-                    .toLocaleString();
-                document.getElementById('display_tax_percent').innerText = salary.tax_percentage || 0;
+                document.getElementById('display_housing').innerText = (basic * housingPercent / 100).toLocaleString();
+                document.getElementById('display_housing_percent').innerText = housingPercent;
+                document.getElementById('display_transport').innerText = (basic * transportPercent / 100).toLocaleString();
+                document.getElementById('display_transport_percent').innerText = transportPercent;
+                document.getElementById('display_insurance').innerText = socialInsurance.toLocaleString(undefined, {minimumFractionDigits: 2});
+                document.getElementById('display_tax').innerText = incomeTaxAmount.toLocaleString(undefined, {minimumFractionDigits: 2});
 
                 document.getElementById('calc_bonuses').value = salary.bonuses || 0;
                 document.getElementById('calc_loans').value = salary.loan_installments || 0;
@@ -435,8 +433,9 @@
 
             const housingPercent = parseFloat(document.getElementById('display_housing_percent').innerText) || 0;
             const transportPercent = parseFloat(document.getElementById('display_transport_percent').innerText) || 0;
-            const healthPercent = parseFloat(document.getElementById('display_health_percent').innerText) || 0;
-            const taxPercent = parseFloat(document.getElementById('display_tax_percent').innerText) || 0;
+            const socialInsurance = basic * 0.06;
+            const incomeTaxText = document.getElementById('display_tax').innerText;
+            const incomeTax = parseFloat(incomeTaxText.replace(/,/g, '')) || 0;
 
             const bonuses = parseFloat(document.getElementById('calc_bonuses').value) || 0;
             const loans = parseFloat(document.getElementById('calc_loans').value) || 0;
@@ -446,8 +445,6 @@
 
             const housingAmount = basic * (housingPercent / 100);
             const transportAmount = basic * (transportPercent / 100);
-            const healthAmount = basic * (healthPercent / 100);
-            const taxAmount = basic * (taxPercent / 100);
 
             const dailyRate = basic / 30;
             const minuteRate = dailyRate / 8 / 60;
@@ -462,7 +459,7 @@
             });
 
             const totalEarnings = basic + housingAmount + transportAmount + bonuses;
-            const totalDeductions = healthAmount + taxAmount + loans + penalties + absenceDeduction + lateDeduction;
+            const totalDeductions = socialInsurance + incomeTax + loans + penalties + absenceDeduction + lateDeduction;
             const net = totalEarnings - totalDeductions;
 
             document.getElementById('live_net').innerText = net.toLocaleString(undefined, {
