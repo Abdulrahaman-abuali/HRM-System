@@ -87,15 +87,22 @@
                                         <tr>
                                             <th style="padding: 12px;">النوع</th>
                                             <th style="padding: 12px;">التاريخ</th>
-                                            <th style="padding: 12px;">الحالة / التبرير</th>
+                                            <th style="padding: 12px;">الحالة</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         @forelse($myRequests as $req)
                                         <tr style="border-bottom: 1px solid #eee;">
                                             <td>{{ $req->leaveType->name }}</td>
-                                            <td>{{ $req->start_date }}</td>
+                                            <td>{{ $req->start_date }} -
+                                                {{ $req->end_date }}</td>
                                             <td>
+                                                <button type="button"
+                                                class="btn btn-sm"
+                                                style="background-color: #e0f2fe; border: 1px solid #bae6fd; color: #0369a1; font-weight: bold; border-radius: 6px; padding: 5px 12px;"
+                                                onclick="showChatHistory('{{ $req->employee->first_name }}', '{{ addslashes($req->reason) }}')">
+                                                  💬 السبب
+                                                </button>
                                                 <span class="badge" style="padding: 4px 8px; border-radius: 8px; background: {{ $req->status == 'approved' ? '#dcfce7' : ($req->status == 'pending' ? '#fef3c7' : ($req->status == 'pending_admin' ? '#e0f2fe' : '#fef2f2')) }}; color: {{ $req->status == 'approved' ? '#166534' : ($req->status == 'pending' ? '#92400e' : ($req->status == 'pending_admin' ? '#0369a1' : '#991b1b')) }};">
                                                     @if($req->status == 'pending') قيد الانتظار @elseif($req->status == 'pending_admin') موافقة مبدئية @elseif($req->status == 'approved') مقبولة @else مرفوضة @endif
                                                 </span>

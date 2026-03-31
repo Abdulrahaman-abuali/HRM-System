@@ -51,20 +51,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.readAll');
     Route::delete('/notifications/destroy-all', [NotificationController::class, 'destroyAll'])->name('notifications.deleteAll');
 
-        /*
-    |--------------------------------------------------------------------------
-    | أ: مسارات "الموظف" + "مدير القسم" (المشتركة لتقديم الطلبات)
-    |--------------------------------------------------------------------------
-    */
-    // أضفنا هذا السطر ليكون متاحاً للموظف ومدير القسم
-    // Route::middleware(['role:موظف,مدير القسم'])->group(function () {
-    //     Route::post('/my-leaves', [LeaveRequestController::class, 'store'])->name('leaves.store');
-    //     Route::get('/my-leaves', [LeaveRequestController::class, 'index'])->name('leaves.index');
-    // });
 
     /*
     |--------------------------------------------------------------------------
-    | أ: مسارات "الموظف" فقط
+    | : مسارات الموظف والمدير
     |--------------------------------------------------------------------------
     */
     Route::middleware(['role:موظف,مدير القسم'])->group(function () {
@@ -73,10 +63,9 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/my-leaves', [LeaveRequestController::class, 'index'])->name('leaves.index');
         Route::post('/my-leaves', [LeaveRequestController::class, 'store'])->name('leaves.store');
         Route::get('/my-tasks', [TaskController::class, 'index'])->name('tasks.index');
-        Route::patch('/tasks/{id}/status', [TaskController::class, 'updateStatus'])->name('tasks.updateStatus');
+       Route::patch('/dashbord/tasks/{id}/update-status', [TaskController::class, 'updateStatus'])->name('tasks.updateStatus');
     });
-    // أضف هذا السطر في ملف web.php
-    // غير السطر إلى هذا الشكل:
+
 
     /*
     |--------------------------------------------------------------------------
@@ -100,6 +89,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/admin/leaves', [LeaveRequestController::class, 'adminIndex'])->name('admin.leaves.index');
         Route::post('/admin/leaves/{id}/status', [LeaveRequestController::class, 'updateStatus'])->name('admin.leaves.status');
         Route::get('/admin/tasks', [TaskController::class, 'adminIndex'])->name('tasks.admin');
+        Route::post('/tasks', [TaskController::class, 'store'])->name('tasks.store');
 
         // أدوات الربط الديناميكي
         Route::get('/get-managers/{departmentId}', [EmployeeController::class, 'getManagers']);
@@ -132,7 +122,6 @@ Route::middleware(['auth'])->group(function () {
 
         // إدارة المستخدمين والصلاحيات والمهام
         Route::resource('users', UserController::class)->except(['create', 'store', 'show']);
-        Route::post('/tasks', [TaskController::class, 'store'])->name('tasks.store');
         Route::delete('/tasks/{id}', [TaskController::class, 'destroy'])->name('tasks.destroy');
 
         // مسارات عامة أخرى

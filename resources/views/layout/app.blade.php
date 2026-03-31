@@ -15,7 +15,7 @@
         display: flex;
         width: 100%;
         min-height: 100vh;
-      
+
     }
 
     .sidebar {
@@ -161,6 +161,12 @@
                         {{-- 2. قائمة مدير القسم (الجديدة) --}}
                         @if (auth()->user()->role?->name === 'مدير القسم')
                             <li class="nav-item">
+                                <a href="{{ route('employee.dashboard') }}"
+                                    class="nav-link {{ request()->routeIs('employee.dashboard') ? 'nav-link-active' : '' }}">
+                                    <span class="nav-icon">🏠</span><span class="nav-text">لوحة الموظف</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
                                 <a href="{{ route('dashbord') }}"
                                     class="nav-link {{ request()->routeIs('dashbord') ? 'nav-link-active' : '' }}">
                                     <span class="nav-icon">🏢</span><span class="nav-text">إحصائيات القسم</span>
@@ -173,17 +179,31 @@
                                 </a>
                             </li>
                             <li class="nav-item">
+                                <a href="{{ route('admin.leaves.index') }}"
+                                    class="nav-link {{ request()->routeIs('admin.leaves.*') ? 'nav-link-active' : '' }}">
+                                    <span class="nav-icon">📅</span><span class="nav-text">طلبات إجازات القسم</span>
+                                </a>
+                            </li>
+                            </li>
+                            <li class="nav-item">
                                 <a href="{{ route('leave') }}"
                                     class="nav-link {{ request()->routeIs('leave') ? 'nav-link-active' : '' }}">
                                     <span class="nav-icon">🕒</span><span class="nav-text">تحضير القسم</span>
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a href="{{ route('admin.leaves.index') }}"
-                                    class="nav-link {{ request()->routeIs('admin.leaves.*') ? 'nav-link-active' : '' }}">
-                                    <span class="nav-icon">📅</span><span class="nav-text">طلبات إجازات القسم</span>
+                                <a href="{{ route('salaries') }}"
+                                    class="nav-link {{ request()->routeIs('salaries') ? 'nav-link-active' : '' }}">
+                                    <span class="nav-icon">💰</span><span class="nav-text">كشوف الرواتب</span>
                                 </a>
                             </li>
+                            <li class="nav-item">
+                                <a href="{{ route('tasks.index') }}"
+                                    class="nav-link {{ request()->routeIs('tasks.index') ? 'nav-link-active' : '' }}">
+                                    <span class="nav-icon">📋</span><span class="nav-text">متابعة المهام</span>
+                                </a>
+                            </li>
+
                             <li class="nav-item">
                                 <a href="{{ route('notifications') }}"
                                     class="nav-link {{ request()->routeIs('notifications') ? 'nav-link-active' : '' }}">

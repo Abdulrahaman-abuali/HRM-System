@@ -33,6 +33,8 @@ class Task extends Model
         'employee_id',
         'title',
         'status',
+        'added_by',         // تأكد من وجود هذا
+        'rejection_reason',
         'due_date',
         'completed_at'
     ];
@@ -42,4 +44,8 @@ class Task extends Model
     {
         return $this->belongsTo(Employee::class);
     }
+    public function creator()
+{
+    return $this->belongsTo(User::class, 'added_by');
+}
 }
