@@ -189,7 +189,7 @@ class EmployeeController extends Controller
                     'description' => 'تمت إضافة موظف جديد: <span class="activity-strong">' . $employee->first_name . ' ' . $employee->last_name . '</span>',
                     'user_id' => Auth::id()
                 ]);
-                event(new \App\Events\EmployeeAdded($employee->first_name . ' ' . $employee->last_name));
+
                 return redirect()->route('employees.index')->with('success', 'تم حفظ الموظف وإنشاء حسابه بنجاح');
             });
         } catch (\Exception $e) {

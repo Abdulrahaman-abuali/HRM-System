@@ -50,12 +50,24 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/notifications/{id}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
     Route::get('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.readAll');
     Route::delete('/notifications/destroy-all', [NotificationController::class, 'destroyAll'])->name('notifications.deleteAll');
+
+        /*
+    |--------------------------------------------------------------------------
+    | أ: مسارات "الموظف" + "مدير القسم" (المشتركة لتقديم الطلبات)
+    |--------------------------------------------------------------------------
+    */
+    // أضفنا هذا السطر ليكون متاحاً للموظف ومدير القسم
+    // Route::middleware(['role:موظف,مدير القسم'])->group(function () {
+    //     Route::post('/my-leaves', [LeaveRequestController::class, 'store'])->name('leaves.store');
+    //     Route::get('/my-leaves', [LeaveRequestController::class, 'index'])->name('leaves.index');
+    // });
+
     /*
     |--------------------------------------------------------------------------
     | أ: مسارات "الموظف" فقط
     |--------------------------------------------------------------------------
     */
-    Route::middleware(['role:موظف'])->group(function () {
+    Route::middleware(['role:موظف,مدير القسم'])->group(function () {
         Route::get('/employee/dashboard', [PagesController::class, 'showEmployeeDashboard'])->name('employee.dashboard');
         Route::get('/my-attendance', [AttendanceController::class, 'index'])->name('attendance.index');
         Route::get('/my-leaves', [LeaveRequestController::class, 'index'])->name('leaves.index');
@@ -65,7 +77,7 @@ Route::middleware(['auth'])->group(function () {
     });
     // أضف هذا السطر في ملف web.php
     // غير السطر إلى هذا الشكل:
-    Route::get('/manager/dashboard', [PagesController::class, 'showDashboardPage'])->name('employees.dashboard_mangers');
+
     /*
     |--------------------------------------------------------------------------
     | ب: مسارات الإدارة المشتركة (مدير النظام + مدير القسم)
@@ -75,8 +87,10 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['role:مدير النظام,مدير القسم'])->group(function () {
         // لوحات التحكم والتقارير
         Route::get('/dashbord', [PagesController::class, 'showDashboardPage'])->name('dashbord');
+        Route::get('/manager/dashboard', [PagesController::class, 'showDashboardPage'])->name('employees.dashboard_mangers');
         Route::get('/leave-admin', [PagesController::class, 'showLeavePage'])->name('leave');
         Route::get('/attendance-admin', [PagesController::class, 'showAttendancePage'])->name('attendance');
+
 
         // إدارة الموظفين (عرض فقط)
         Route::get('/employees', [EmployeeController::class, 'index'])->name('employees.index');
