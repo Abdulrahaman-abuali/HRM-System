@@ -280,6 +280,61 @@
         });
         return;
     }
-</script>
-@endsection
+
+    // تقسيم النص وعكس المصفوفة ليظهر سبب الموظف (الذي خزن أولاً) في البداية
+    let entries = reasonText.split('[!]').reverse();
+    let chatHtml = '<div style="text-align: right; display: flex; flex-direction: column; gap: 15px; padding: 10px; max-height: 400px; overflow-y: auto;">';
+
+    entries.forEach((entry) => {
+        let content = entry.trim();
+        if(!content) return;
+
+        let style = "";
+        let label = "";
+        let icon = "";
+
+        // تصحيح الشروط وترتيبها (مدير النظام أولاً ثم القسم ثم الموظف)
+        if (content.includes('مدير النظام')) {
+            style = "background: #fef2f2; color: #b91c1c; border-right: 4px solid #f87171; align-self: flex-start;";
+            label = "مدير النظام";
+            icon = "🚩";
+            content = content.replace(/🚫|رفض|\(مدير النظام\)|:/g, '').trim();
+        } else if (content.includes('مدير القسم')) {
+            style = "background: #fff7ed; color: #c2410c; border-right: 4px solid #fb923c; align-self: flex-start;";
+            label = "مدير القسم";
+            icon = "🔸";
+            content = content.replace(/🚫|رفض|\(مدير القسم\)|:/g, '').trim();
+        } else {
+            // الحالة الافتراضية هي الموظف
+            style = "background: #f1f5f9; color: #475569; border-right: 4px solid #cbd5e1; align-self: flex-start;";
+            label = "الموظف (الطلب الأصلي)";
+            icon = "👤";
+            content = content.replace(/📝|سبب الموظف|:/g, '').trim();
+        }
+
+        chatHtml += `
+            <div style="padding: 12px; border-radius: 8px; ${style} width: 95%; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                <span style="display: block; font-weight: bold; font-size: 0.75rem; margin-bottom: 5px; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 3px;">
+                    ${icon} ${label}
+                </span>
+                <div style="font-size: 0.9rem; line-height: 1.6; word-wrap: break-word;">${content}</div>
+            </div>
+        `;
+    });
+
+    chatHtml += '</div>';
+
+    Swal.fire({
+        title: '<span style="color: #312e81;">💬 سجل السبب للطلب</span>',
+        html: chatHtml,
+        showCloseButton: true,
+        showConfirmButton: false,
+        width: '450px',
+        background: '#fff',
+        customClass: {
+            popup: 'rounded-lg shadow-lg'
+        }
+    });
+}    </script>
+    @endsection
 @endsection
