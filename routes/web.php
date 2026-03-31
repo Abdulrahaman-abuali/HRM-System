@@ -137,5 +137,7 @@ Route::middleware(['auth'])->group(function () {
 
         // مسارات عامة أخرى
         Route::post('/notifications/send-general', [NotificationController::class, 'sendGeneralNotification'])->name('notifications.sendGeneral');
+        // توليد الرواتب الشهرية
+        Route::post('/salaries/generate', [PagesController::class, 'generateMonthlySalaries'])->name('salaries.generate');
     });
 });
