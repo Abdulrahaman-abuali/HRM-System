@@ -33,18 +33,24 @@ class PagesController extends Controller
             'password' => 'required',
         ]);
 
-        if (!Auth::attempt($credentials)) {
+        // ✅ الخطوة 1: البحث عن المستخدم أولاً
+        $user = User::where('email', $credentials['email'])->first();
+
+        // ✅ الخطوة 2: التحقق من وجود المستخدم وحالة نشاطه
+        if (!$user) {
             return back()->withErrors(['email' => 'بيانات الدخول غير صحيحة.']);
         }
 
-        $request->session()->regenerate();
-        $user = Auth::user();
-
-        // تحقق من حالة النشاط
-        if (isset($user->is_active) && !$user->is_active) {
-            Auth::logout();
-            return back()->withErrors(['email' => 'الحساب غير مفعل.']);
+        if ($user->is_active != 1) {
+            return back()->withErrors(['email' => 'الحساب غير مفعل. يرجى التواصل مع مدير النظام.']);
         }
+
+        // ✅ الخطوة 3: محاولة تسجيل الدخول
+        if (!Auth::attempt($credentials)) {
+            return back()->withErrors(['email' => 'كلمة المرور غير صحيحة.']);
+        }
+
+        $request->session()->regenerate();
 
         // التوجيه بناءً على الدور (Role)
         $roleName = $user->role?->name;
@@ -53,8 +59,8 @@ class PagesController extends Controller
             return redirect()->route('dashbord');
         }
 
-        if ($user->role->name === 'مدير القسم') {
-            return redirect()->route('employees.dashboard_mangers'); // أو الصفحة التي تريدها أن تكون واجهته الرئيسية
+        if ($roleName === 'مدير القسم') {
+            return redirect()->route('employee.dashboard');
         }
 
         if ($roleName === 'موظف') {
@@ -71,9 +77,8 @@ class PagesController extends Controller
     public function showDashboardPage()
     {
         $user = Auth::user();
-
         $role = $user->role?->name;
-        // إصلاح: عد الإشعارات غير المقروءة للمستخدم الحالي
+
         $unreadNotificationsCount = \App\Models\Notification::where('notifiable_id', $user->id)
             ->where('notifiable_type', get_class($user))
             ->where('is_read', 0)
@@ -94,7 +99,6 @@ class PagesController extends Controller
                 'unread_notifications' => $unreadNotificationsCount,
             ];
 
-            // جلب نشاطات وحضور القسم فقط
             $todayAttendance = AttendanceRecord::with('employee')
                 ->whereDate('date', today())
                 ->whereHas('employee', fn($q) => $q->where('department_id', $deptId))
@@ -104,13 +108,12 @@ class PagesController extends Controller
                 ->whereHas('employee', fn($q) => $q->where('department_id', $deptId))
                 ->latest()->take(3)->get();
 
-            // السجلات والنشاطات (يمكنك فلترتها أيضاً حسب القسم إذا كان جدول النشاطات يدعم ذلك)
             $activities = \App\Models\ActivityLog::latest()->take(5)->get();
 
             return view('employees.dashboard_mangers', compact('stats', 'todayAttendance', 'activities', 'latestLeaves'));
         }
 
-        // 👑 إحصائيات مدير النظام (التي كانت لديك مسبقاً)
+        // 👑 إحصائيات مدير النظام
         $stats = [
             'total_employees'      => Employee::count(),
             'today_attendance'     => AttendanceRecord::whereDate('date', today())->count(),
@@ -122,15 +125,79 @@ class PagesController extends Controller
         $activities = \App\Models\ActivityLog::latest()->take(5)->get();
         $latestLeaves = LeaveRequest::with('employee')->latest()->take(3)->get();
 
-        return view('dashbord.index', compact('stats', 'todayAttendance', 'activities', 'latestLeaves'));
+        // ✅ جلب آخر 5 موظفين جدد
+        $recentEmployees = \App\Models\Employee::latest()->take(5)->get();
+
+        // ✅ جلب آخر 5 موظفين منفصلين
+        $inactiveEmployees = \App\Models\Employee::where('status', 'غير نشط')
+            ->latest('updated_at')
+            ->take(5)
+            ->get();
+
+        // ✅ جلب طلبات القروض المعلقة
+        $pendingLoans = \App\Models\LoanRequest::where('status', 'pending')
+            ->with('employee')
+            ->latest()
+            ->take(5)
+            ->get();
+
+        // ✅ إحصائيات طلبات القروض المعلقة
+        $pendingLoanRequestsCount = \App\Models\LoanRequest::where('status', 'pending')->count();
+
+        // ✅ تمرير جميع المتغيرات إلى الـ View
+        return view('dashbord.index', compact(
+            'stats',
+            'todayAttendance',
+            'activities',
+            'latestLeaves',
+            'recentEmployees',
+            'inactiveEmployees',
+            'pendingLoans',
+            'pendingLoanRequestsCount'
+        ));
     }
 
+
     /**
+     * لوحة تحكم الموظف
+/**
      * لوحة تحكم الموظف
      */
     public function showEmployeeDashboard()
     {
-        return view('employees.dashboard');
+        $employee = Auth::user()->employee;
+
+        $myRequests = collect(); // مجموعة فارغة كقيمة افتراضية
+
+        if ($employee) {
+            // جلب طلبات الإجازات
+            $leaveRequests = LeaveRequest::where('employee_id', $employee->id)
+                ->with('leaveType')
+                ->latest()
+                ->get()
+                ->map(function ($item) {
+                    $item->type = 'leave';
+                    $item->details = $item->leaveType->name ?? 'إجازة';
+                    $item->date = $item->created_at;
+                    return $item;
+                });
+
+            // جلب طلبات القروض
+            $loanRequests = \App\Models\LoanRequest::where('employee_id', $employee->id)
+                ->latest()
+                ->get()
+                ->map(function ($item) {
+                    $item->type = 'loan';
+                    $item->details = number_format($item->amount, 2) . ' ريال / ' . $item->months . ' شهر';
+                    $item->date = $item->created_at;
+                    return $item;
+                });
+
+            // دمج الطلبات وترتيبها حسب التاريخ (الأحدث أولاً)
+            $myRequests = $leaveRequests->concat($loanRequests)->sortByDesc('date');
+        }
+
+        return view('employees.dashboard', compact('myRequests'));
     }
 
     /**
@@ -202,34 +269,34 @@ class PagesController extends Controller
     {
         return view('dashbord.2');
     }
-public function showAttendancePage()
-{
-    // طلبات الإجازات
-    $leaveRequests = \App\Models\LeaveRequest::with(['employee', 'leaveType'])->latest()->get();
+    public function showAttendancePage()
+    {
+        // طلبات الإجازات
+        $leaveRequests = \App\Models\LeaveRequest::with(['employee', 'leaveType'])->latest()->get();
 
-    // طلبات القروض
-    $loanRequests = \App\Models\LoanRequest::with('employee')->latest()->get();
+        // طلبات القروض
+        $loanRequests = \App\Models\LoanRequest::with('employee')->latest()->get();
 
-    // إحصائيات الإجازات
-    $leaveStats = [
-        'pending'  => \App\Models\LeaveRequest::where('status', 'pending')->count(),
-        'approved' => \App\Models\LeaveRequest::where('status', 'approved')->count(),
-        'rejected' => \App\Models\LeaveRequest::where('status', 'rejected')->count(),
-        'total'    => \App\Models\LeaveRequest::count(),
-    ];
+        // إحصائيات الإجازات
+        $leaveStats = [
+            'pending'  => \App\Models\LeaveRequest::where('status', 'pending')->count(),
+            'approved' => \App\Models\LeaveRequest::where('status', 'approved')->count(),
+            'rejected' => \App\Models\LeaveRequest::where('status', 'rejected')->count(),
+            'total'    => \App\Models\LeaveRequest::count(),
+        ];
 
-    // إحصائيات القروض
-    $loanStats = [
-        'pending'  => \App\Models\LoanRequest::where('status', 'pending')->count(),
-        'approved' => \App\Models\LoanRequest::where('status', 'approved')->count(),
-        'rejected' => \App\Models\LoanRequest::where('status', 'rejected')->count(),
-        'total'    => \App\Models\LoanRequest::count(),
-    ];
+        // إحصائيات القروض
+        $loanStats = [
+            'pending'  => \App\Models\LoanRequest::where('status', 'pending')->count(),
+            'approved' => \App\Models\LoanRequest::where('status', 'approved')->count(),
+            'rejected' => \App\Models\LoanRequest::where('status', 'rejected')->count(),
+            'total'    => \App\Models\LoanRequest::count(),
+        ];
 
-    $title = "إدارة الطلبات";
+        $title = "إدارة الطلبات";
 
-    return view('dashbord.attendance', compact('leaveRequests', 'loanRequests', 'leaveStats', 'loanStats', 'title'));
-}
+        return view('dashbord.attendance', compact('leaveRequests', 'loanRequests', 'leaveStats', 'loanStats', 'title'));
+    }
     public function showSalariesPage(Request $request)
     {
         $user = Auth::user();
@@ -238,32 +305,80 @@ public function showAttendancePage()
         $status = $request->input('status');
         $dept_id = $request->input('department_id');
 
-        // جلب الأقسام (تستخدم في القائمة المنسدلة للمدير)
         $departments = \App\Models\Department::all();
 
-        // --- المنطق الجديد: التفرقة بين المدير والموظف ---
-
         if ($user->role?->name === 'مدير النظام') {
-            // 1. المدير: يرى الجميع مع إمكانية البحث والفلترة
-            $employeesQuery = \App\Models\Employee::with(['department', 'salaries' => function ($q) use ($date) {
-                $q->where('month', $date);
-            }]);
+            // ✅ 1. جلب جميع الموظفين من جدول employees
+            $employeesQuery = \App\Models\Employee::query()
+                ->with(['department', 'user'])
+                ->select(
+                    'id',
+                    'first_name',
+                    'last_name',
+                    'department_id',
+                    'user_id',
+                    'basic_salary',
+                    'housing_percentage',
+                    'transport_percentage'
+                );
 
             if ($search) {
                 $employeesQuery->where(function ($q) use ($search) {
-                    $q->where('first_name', 'like', "%{$search}%")->orWhere('last_name', 'like', "%{$search}%");
+                    $q->where('first_name', 'like', "%{$search}%")
+                        ->orWhere('last_name', 'like', "%{$search}%");
                 });
             }
             if ($dept_id) {
                 $employeesQuery->where('department_id', $dept_id);
             }
-            if ($status) {
-                $employeesQuery->whereHas('salaries', function ($q) use ($date, $status) {
-                    $q->where('month', $date)->where('status', $status);
-                });
-            }
 
             $employees = $employeesQuery->get();
+
+            // ✅ 2. إضافة سجل الراتب لكل موظف
+            foreach ($employees as $employee) {
+                // البحث عن راتب حقيقي في جدول salaries
+                $salary = \App\Models\Salary::where('employee_id', $employee->id)
+                    ->where('month', $date)
+                    ->first();
+
+                if (!$salary) {
+                    // ✅ لا يوجد راتب، ننشئ كائن افتراضي باستخدام بيانات الموظف
+                    $basicSalary = (float) ($employee->basic_salary ?? 5000);
+                    $housingPercent = (float) ($employee->housing_percentage ?? 10);
+                    $transportPercent = (float) ($employee->transport_percentage ?? 5);
+
+                    $housingAmount = $basicSalary * ($housingPercent / 100);
+                    $transportAmount = $basicSalary * ($transportPercent / 100);
+                    $socialInsurance = $basicSalary * 0.06;
+                    $netSalary = $basicSalary + $housingAmount + $transportAmount - $socialInsurance;
+
+                    $salary = new \App\Models\Salary();
+                    $salary->employee_id = $employee->id;
+                    $salary->month = $date;
+                    $salary->basic_salary = $basicSalary;
+                    $salary->housing_percentage = $housingPercent;
+                    $salary->transport_percentage = $transportPercent;
+                    $salary->bonuses = 0;
+                    $salary->loan_installments = 0;
+                    $salary->penalties = 0;
+                    $salary->absence_days = 0;
+                    $salary->late_minutes = 0;
+                    $salary->status = 'معلق';
+                    $salary->tax_percentage = 0;
+                    $salary->net_salary = $netSalary;
+                }
+
+                // تعيين الراتب للموظف
+                $employee->setRelation('salaries', collect([$salary]));
+            }
+
+            // ✅ 3. فلترة حسب حالة الراتب (بعد إنشاء الرواتب الافتراضية)
+            if ($status) {
+                $employees = $employees->filter(function ($employee) use ($status) {
+                    $salary = $employee->salaries->first();
+                    return $salary && $salary->status == $status;
+                });
+            }
 
             // إحصائيات عامة للمدير
             $stats = [
@@ -273,13 +388,52 @@ public function showAttendancePage()
                 'average_salary'   => \App\Models\Salary::where('month', $date)->avg('net_salary') ?? 0,
             ];
         } else {
-            // 2. الموظف: يجلب سجله هو فقط لهذا الشهر
+            // الموظف العادي
             $employees = \App\Models\Employee::where('user_id', $user->id)
+                ->select(
+                    'id',
+                    'first_name',
+                    'last_name',
+                    'department_id',
+                    'user_id',
+                    'basic_salary',
+                    'housing_percentage',
+                    'transport_percentage'
+                )
                 ->with(['department', 'salaries' => function ($q) use ($date) {
                     $q->where('month', $date);
                 }])->get();
 
-            // إحصائيات الموظف (يرى راتبه الشخصي فقط في البطاقة الأولى)
+            if ($employees->isNotEmpty()) {
+                $employee = $employees->first();
+                $salary = $employee->salaries->first();
+
+                if (!$salary) {
+                    $basicSalary = (float) ($employee->basic_salary ?? 5000);
+                    $housingPercent = (float) ($employee->housing_percentage ?? 10);
+                    $transportPercent = (float) ($employee->transport_percentage ?? 5);
+
+                    $housingAmount = $basicSalary * ($housingPercent / 100);
+                    $transportAmount = $basicSalary * ($transportPercent / 100);
+                    $socialInsurance = $basicSalary * 0.06;
+                    $netSalary = $basicSalary + $housingAmount + $transportAmount - $socialInsurance;
+
+                    $salary = new \App\Models\Salary();
+                    $salary->basic_salary = $basicSalary;
+                    $salary->housing_percentage = $housingPercent;
+                    $salary->transport_percentage = $transportPercent;
+                    $salary->bonuses = 0;
+                    $salary->loan_installments = 0;
+                    $salary->penalties = 0;
+                    $salary->absence_days = 0;
+                    $salary->late_minutes = 0;
+                    $salary->status = 'معلق';
+                    $salary->net_salary = $netSalary;
+
+                    $employee->setRelation('salaries', collect([$salary]));
+                }
+            }
+
             $mySalary = $employees->first()?->salaries->first();
             $stats = [
                 'total_salaries'   => $mySalary->net_salary ?? 0,
@@ -639,5 +793,13 @@ public function showAttendancePage()
         $annualTax = $taxOnSecondBracket + ($remaining * 0.15);
 
         return round($annualTax / 12, 2);
+    }
+    /**
+     * عرض سجل النشاطات الكامل
+     */
+    public function showActivityLogPage()
+    {
+        $activities = ActivityLog::latest()->paginate(20);
+        return view('dashbord.activity_log', compact('activities'));
     }
 }

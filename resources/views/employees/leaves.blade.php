@@ -69,13 +69,14 @@
                 <div class="table-responsive">
                     <table class="table">
                         <thead>
-                            32
+                            <tr>
                                 <th>النوع</th>
                                 <th>من</th>
                                 <th>إلى</th>
                                 <th>السبب</th>
                                 <th>الحالة</th>
                                 <th>تاريخ التقديم</th>
+                            </tr>
                             </thead>
                         <tbody>
                             @forelse($leaves as $leave)
@@ -145,13 +146,14 @@
                 <div class="table-responsive">
                     <table class="table">
                         <thead>
-                            32
+                            <tr>
                                 <th>المبلغ</th>
                                 <th>عدد الأشهر</th>
                                 <th>القسط الشهري</th>
                                 <th>السبب</th>
                                 <th>الحالة</th>
                                 <th>تاريخ التقديم</th>
+                            </tr>
                             </thead>
                         <tbody>
                             @forelse($loanRequests as $request)

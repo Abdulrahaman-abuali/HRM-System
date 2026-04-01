@@ -199,7 +199,8 @@
                                         @if (auth()->user()->role->name === 'مدير النظام')
                                             <td>
                                                 <div style="display: flex; gap: 4px;">
-                                                    @if ($salary && $salary->status !== 'مدفوع')
+                                                    {{-- ✅ فقط إذا كان الراتب حقيقياً (له id) ولم يكن مدفوعاً --}}
+                                                    @if ($salary && isset($salary->id) && $salary->id && $salary->status !== 'مدفوع')
                                                         <form action="{{ route('salaries.pay', $salary->id) }}"
                                                             method="POST">
                                                             @csrf
@@ -207,9 +208,11 @@
                                                                 style="background: #10b981; border:none;">دفع</button>
                                                         </form>
                                                     @endif
+
+                                                    {{-- زر التعديل يظهر دائماً --}}
                                                     <button class="btn btn-sm btn-primary"
                                                         style="background: #4f46e5; border:none;"
-                                                        onclick="openSalaryModal({{ json_encode($salary) }}, '{{ $emp->first_name }}', 'EMP-{{ $emp->id }}', '{{ $emp->department->name ?? '' }}', {{ json_encode($emp) }})">
+                                                        onclick="openSalaryModal({{ json_encode($salary) }}, '{{ $emp->first_name }}', 'EMP-{{ str_pad($emp->id, 3, '0', STR_PAD_LEFT) }}', '{{ $emp->department->name ?? '' }}', {{ json_encode($emp) }})">
                                                         تعديل
                                                     </button>
                                                 </div>
@@ -258,7 +261,8 @@
                                     id="display_housing_percent">0</span>%)</div>
                             <div><strong>🚗 بدل المواصلات:</strong> <span id="display_transport">0</span> ر.ي (<span
                                     id="display_transport_percent">0</span>%)</div>
-                            <div><strong>🏥 التأمينات الاجتماعية:</strong> <span id="display_insurance">0</span> ر.ي (6%)</div>
+                            <div><strong>🏥 التأمينات الاجتماعية:</strong> <span id="display_insurance">0</span> ر.ي (6%)
+                            </div>
                             <div><strong>📊 ضريبة الدخل:</strong> <span id="display_tax">0</span> ر.ي</div>
                         </div>
                     </div>
@@ -399,8 +403,12 @@
                 document.getElementById('display_housing_percent').innerText = housingPercent;
                 document.getElementById('display_transport').innerText = (basic * transportPercent / 100).toLocaleString();
                 document.getElementById('display_transport_percent').innerText = transportPercent;
-                document.getElementById('display_insurance').innerText = socialInsurance.toLocaleString(undefined, {minimumFractionDigits: 2});
-                document.getElementById('display_tax').innerText = incomeTaxAmount.toLocaleString(undefined, {minimumFractionDigits: 2});
+                document.getElementById('display_insurance').innerText = socialInsurance.toLocaleString(undefined, {
+                    minimumFractionDigits: 2
+                });
+                document.getElementById('display_tax').innerText = incomeTaxAmount.toLocaleString(undefined, {
+                    minimumFractionDigits: 2
+                });
 
                 document.getElementById('calc_bonuses').value = salary.bonuses || 0;
                 document.getElementById('calc_loans').value = salary.loan_installments || 0;
