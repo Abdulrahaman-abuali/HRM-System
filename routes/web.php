@@ -57,6 +57,7 @@ Route::middleware(['auth', 'check.must.change.password'])->group(function () {
     Route::delete('/notifications/{id}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
     Route::get('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.readAll');
     Route::delete('/notifications/destroy-all', [NotificationController::class, 'destroyAll'])->name('notifications.deleteAll');
+    Route::get('/check-new-notifications', [NotificationController::class, 'checkNew'])->name('notifications.check');
 
     /*
     |--------------------------------------------------------------------------
@@ -142,5 +143,6 @@ Route::middleware(['auth', 'check.must.change.password'])->group(function () {
 
         // مسارات عامة
         Route::post('/notifications/send-general', [NotificationController::class, 'sendGeneralNotification'])->name('notifications.sendGeneral');
+
     });
 });
