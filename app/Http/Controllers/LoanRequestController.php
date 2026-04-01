@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Routing\Controller;
 use App\Models\LoanRequest;
 use App\Models\Loan;
 use App\Models\Employee;
+use App\Models\User;
+use App\Models\Notification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -36,12 +39,38 @@ class LoanRequestController extends Controller
         return view('loans.create');
     }
 
-    /**
-     * حفظ طلب قرض جديد
-     */
     public function store(Request $request)
     {
         $employee = Auth::user()->employee;
+        $userRole = Auth::user()->role?->name;
+
+        // ✅ التحقق من وجود قرض نشط للموظف
+        $activeLoan = \App\Models\Loan::where('employee_id', $employee->id)
+            ->where('status', 'active')
+            ->exists();
+
+        if ($activeLoan) {
+            if ($userRole === 'مدير القسم') {
+                return redirect()->route('employee.dashboard')
+                    ->with('error', 'لا يمكنك تقديم طلب قرض جديد لأن لديك قرضاً نشطاً حالياً.');
+            }
+            return redirect()->route('requests.index')
+                ->with('error', 'لا يمكنك تقديم طلب قرض جديد لأن لديك قرضاً نشطاً حالياً.');
+        }
+
+        // ✅ التحقق من وجود طلب قرض قيد الانتظار (pending) للموظف
+        $pendingRequest = \App\Models\LoanRequest::where('employee_id', $employee->id)
+            ->where('status', 'pending')
+            ->exists();
+
+        if ($pendingRequest) {
+            if ($userRole === 'مدير القسم') {
+                return redirect()->route('employee.dashboard')
+                    ->with('error', 'لا يمكنك تقديم طلب قرض جديد لأن لديك طلباً قيد المراجعة حالياً.');
+            }
+            return redirect()->route('requests.index')
+                ->with('error', 'لا يمكنك تقديم طلب قرض جديد لأن لديك طلباً قيد المراجعة حالياً.');
+        }
 
         $request->validate([
             'amount' => 'required|numeric|min:1000',
@@ -60,7 +89,31 @@ class LoanRequestController extends Controller
             'status' => 'pending',
         ]);
 
-        return redirect()->route('loans.my-requests')
+        // ✅ إشعار لمدير النظام عند تقديم طلب قرض جديد
+        $admin = User::whereHas('role', function ($q) {
+            $q->where('name', 'مدير النظام');
+        })->first();
+
+        if ($admin) {
+            Notification::create([
+                'user_id'         => $admin->id,
+                'notifiable_id'   => $admin->id,
+                'notifiable_type' => 'App\Models\User',
+                'title'           => 'طلب قرض جديد 💰',
+                'text'            => 'قام الموظف ' . $employee->first_name . ' ' . $employee->last_name . ' بتقديم طلب قرض بمبلغ ' . number_format($request->amount, 2) . ' ريال بانتظار موافقتك.',
+                'type'            => 'reminder',
+                'source'          => 'نظام القروض',
+                'is_read'         => false,
+            ]);
+        }
+
+        // ✅ التوجيه حسب دور المستخدم
+        if ($userRole === 'مدير القسم') {
+            return redirect()->route('employee.dashboard')
+                ->with('success', 'تم تقديم طلب القرض بنجاح، سيتم مراجعته من قبل إدارة الموارد البشرية.');
+        }
+
+        return redirect()->route('requests.index')
             ->with('success', 'تم تقديم طلب القرض بنجاح، سيتم مراجعته من قبل إدارة الموارد البشرية.');
     }
 
@@ -76,9 +129,6 @@ class LoanRequestController extends Controller
         return view('loans.admin_requests', compact('requests'));
     }
 
-    /**
-     * الموافقة على طلب قرض
-     */
     public function approve($id)
     {
         $loanRequest = LoanRequest::findOrFail($id);
@@ -102,12 +152,26 @@ class LoanRequestController extends Controller
             'total_months' => $loanRequest->months,
             'paid_months' => 0,
             'remaining_balance' => $loanRequest->amount,
-            'start_date' => now()->addMonth()->startOfMonth(), // يبدأ من الشهر القادم
+            'start_date' => now()->addMonth()->startOfMonth(),
             'status' => 'active',
             'notes' => 'تمت الموافقة على طلب رقم ' . $loanRequest->id,
         ]);
 
-        return redirect()->route('loans.admin-requests')
+        // ✅ إشعار للموظف عند الموافقة على طلب القرض
+        if ($loanRequest->employee && $loanRequest->employee->user_id) {
+            Notification::create([
+                'user_id'         => $loanRequest->employee->user_id,
+                'notifiable_id'   => $loanRequest->employee->user_id,
+                'notifiable_type' => 'App\Models\User',
+                'title'           => 'موافقة على طلب قرض ✅',
+                'text'            => 'تمت الموافقة على طلب القرض الخاص بك بمبلغ ' . number_format($loanRequest->amount, 2) . ' ريال. سيتم خصم القسط الشهري من راتبك.',
+                'type'            => 'success',
+                'source'          => 'نظام القروض',
+                'is_read'         => false,
+            ]);
+        }
+
+        return redirect()->route('attendance')
             ->with('success', 'تمت الموافقة على طلب القرض وإنشاء سجل القرض بنجاح.');
     }
 
@@ -128,7 +192,21 @@ class LoanRequestController extends Controller
             'approved_at' => now(),
         ]);
 
-        return redirect()->route('loans.admin-requests')
+        // ✅ إشعار للموظف عند رفض طلب القرض
+        if ($loanRequest->employee && $loanRequest->employee->user_id) {
+            Notification::create([
+                'user_id'         => $loanRequest->employee->user_id,
+                'notifiable_id'   => $loanRequest->employee->user_id,
+                'notifiable_type' => 'App\Models\User',
+                'title'           => 'رفض طلب قرض ❌',
+                'text'            => 'عذراً، تم رفض طلب القرض الخاص بك بمبلغ ' . number_format($loanRequest->amount, 2) . ' ريال. يمكنك التواصل مع إدارة الموارد البشرية لمعرفة السبب.',
+                'type'            => 'important',
+                'source'          => 'نظام القروض',
+                'is_read'         => false,
+            ]);
+        }
+
+        return redirect()->route('attendance')
             ->with('success', 'تم رفض طلب القرض.');
     }
 }

@@ -9,54 +9,54 @@
     <link rel="stylesheet" href="{{ asset('style/CSS.css') }}">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
- <style>
-    /* إصلاح مشكلة الشريط الجانبي */
-    .layout {
-        display: flex;
-        width: 100%;
-        min-height: 100vh;
+    <style>
+        /* إصلاح مشكلة الشريط الجانبي */
+        .layout {
+            display: flex;
+            width: 100%;
+            min-height: 100vh;
 
-    }
+        }
 
-    .sidebar {
-        flex-shrink: 0;
-        width: 280px;
-        background: linear-gradient(135deg, #4f46e5, #7c3aed);
-        color: #fff;
-        height: 100vh;
-        position: sticky;
-        top: 0;
-        overflow-y: auto;
-    }
+        .sidebar {
+            flex-shrink: 0;
+            width: 280px;
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            color: #fff;
+            height: 100vh;
+            position: sticky;
+            top: 0;
+            overflow-y: auto;
+        }
 
-    .main {
-        flex: 1;
-        min-width: 0;
-        overflow-x: hidden;
-        background: #f8fafc;
-    }
+        .main {
+            flex: 1;
+            min-width: 0;
+            overflow-x: hidden;
+            background: #f8fafc;
+        }
 
-    .content-body {
-        overflow-x: auto;
-        width: 100%;
-    }
+        .content-body {
+            overflow-x: auto;
+            width: 100%;
+        }
 
-    /* تحسين عرض الجداول داخل المحتوى */
-    .card {
-        width: 100%;
-        overflow-x: auto;
-    }
+        /* تحسين عرض الجداول داخل المحتوى */
+        .card {
+            width: 100%;
+            overflow-x: auto;
+        }
 
-    .table-responsive {
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-    }
+        .table-responsive {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
 
-    .table {
-        min-width: 100%;
-        width: 100%;
-    }
-</style>
+        .table {
+            min-width: 100%;
+            width: 100%;
+        }
+    </style>
     <style>
         .nav-link-active {
             background-color: rgba(255, 255, 255, 0.2);
@@ -109,15 +109,13 @@
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a href="{{ route('leave') }}"
-                                    class="nav-link {{ request()->routeIs('leave') ? 'nav-link-active' : '' }}">
-                                    <span class="nav-icon">🕒</span><span class="nav-text">الحضور والانصراف</span>
+                                <a href="{{ route('attendance') }}" class="nav-link">
+                                    <span class="nav-icon">📋</span><span class="nav-text">إدارة الطلبات</span>
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a href="{{ route('admin.leaves.index') }}"
-                                    class="nav-link {{ request()->routeIs('admin.leaves.*') ? 'nav-link-active' : '' }}">
-                                    <span class="nav-icon">📅</span><span class="nav-text">الإجازات</span>
+                                <a href="{{ route('leave') }}" class="nav-link">
+                                    <span class="nav-icon">🕒</span><span class="nav-text">الحضور والانصراف</span>
                                 </a>
                             </li>
                             <li class="nav-item">
@@ -179,9 +177,9 @@
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a href="{{ route('admin.leaves.index') }}"
-                                    class="nav-link {{ request()->routeIs('admin.leaves.*') ? 'nav-link-active' : '' }}">
-                                    <span class="nav-icon">📅</span><span class="nav-text">طلبات إجازات القسم</span>
+                                <a href="{{ route('attendance') }}"
+                                    class="nav-link {{ request()->routeIs('attendance') ? 'nav-link-active' : '' }}">
+                                    <span class="nav-icon">📋</span><span class="nav-text">إدارة الطلبات</span>
                                 </a>
                             </li>
                             </li>
@@ -221,9 +219,9 @@
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a href="{{ route('leaves.index') }}"
-                                    class="nav-link {{ request()->routeIs('leaves.*') ? 'nav-link-active' : '' }}">
-                                    <span class="nav-icon">📅</span><span class="nav-text">طلبات الإجازة</span>
+                                <a href="{{ route('requests.index') }}" class="nav-link">
+                                    <span class="nav-icon">📋</span>
+                                    <span class="nav-text">طلباتي</span>
                                 </a>
                             </li>
                             <li class="nav-item">

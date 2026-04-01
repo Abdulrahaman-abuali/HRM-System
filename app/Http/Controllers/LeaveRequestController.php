@@ -34,98 +34,91 @@ class LeaveRequestController extends Controller
             ->latest()
             ->get();
 
-        return view('employees.leaves', compact('leaves', 'leaveTypes', 'loanRequests'));
+        // جلب القروض النشطة للموظف (اختياري)
+        $activeLoans = \App\Models\Loan::where('employee_id', $employee->id)
+            ->where('status', 'active')
+            ->get();
+
+        return view('employees.leaves', compact('leaves', 'leaveTypes', 'loanRequests', 'activeLoans'));
+    }
+public function store(Request $request)
+{
+    $request->validate([
+        'leave_type_id' => 'required|exists:leave_types,id',
+        'start_date'    => 'required|date|after_or_equal:today',
+        'end_date'      => 'required|date|after:start_date',
+        'reason'        => 'nullable|string|max:1000',
+    ]);
+
+    $employee = Auth::user()->employee;
+    $userRole = Auth::user()->role?->name;
+
+    LeaveRequest::create([
+        'employee_id'   => $employee->id,
+        'leave_type_id' => $request->leave_type_id,
+        'start_date'    => $request->start_date,
+        'end_date'      => $request->end_date,
+        'reason'        => $request->reason,
+        'status'        => 'pending',
+    ]);
+
+    // إشعار لمدير النظام
+    $admin = User::whereHas('role', function ($q) {
+        $q->where('name', 'مدير النظام');
+    })->first();
+
+    if ($admin) {
+        Notification::create([
+            'user_id'         => $admin->id,
+            'notifiable_id'   => $admin->id,
+            'notifiable_type' => 'App\Models\User',
+            'title'           => 'طلب إجازة جديد 📅',
+            'text'            => 'قام الموظف ' . $employee->first_name . ' بتقديم طلب إجازة جديد بانتظار موافقتك.',
+            'type'            => 'reminder',
+            'source'          => 'نظام الإجازات',
+            'is_read'         => false,
+        ]);
     }
 
-    /**
-     * حفظ طلب إجازة جديد من قبل الموظف
-     */
-    public function store(Request $request)
-    {
-        $request->validate([
-            'leave_type_id' => 'required|exists:leave_types,id',
-            'start_date'    => 'required|date|after_or_equal:today',
-            'end_date'      => 'required|date|after:start_date',
-            'reason'        => 'nullable|string|max:1000',
-        ]);
-
-        $employee = Auth::user()->employee;
-
-        // 1. إنشاء طلب الإجازة
-        LeaveRequest::create([
-            'employee_id'   => $employee->id,
-            'leave_type_id' => $request->leave_type_id,
-            'start_date'    => $request->start_date,
-            'end_date'      => $request->end_date,
-            'reason'        => $request->reason,
-            'status'        => 'pending',
-        ]);
-
-        // 2. البحث عن المدير
-        $admin = User::whereHas('role', function($q){
-            $q->where('name', 'مدير النظام');
-        })->first();
-
-        // 3. إنشاء الإشعار
-        if ($admin) {
-            Notification::create([
-                'user_id'         => $admin->id,
-                'notifiable_id'   => $admin->id,
-                'notifiable_type' => 'App\Models\User',
-                'title'           => 'طلب إجازة جديد 📅',
-                'text'            => 'قام الموظف ' . $employee->first_name . ' بتقديم طلب إجازة جديد بانتظار موافقتك.',
-                'type'            => 'reminder',
-                'source'          => 'نظام الإجازات',
-                'is_read'         => false,
-            ]);
-        }
-
-        return back()->with('success', 'تم إرسال طلب الإجازة بنجاح.');
+    // ✅ التوجيه حسب دور المستخدم
+    if ($userRole === 'مدير القسم') {
+        return redirect()->route('employee.dashboard')
+            ->with('success', 'تم إرسال طلب الإجازة بنجاح.');
     }
 
+    return redirect()->route('requests.index')
+        ->with('success', 'تم إرسال طلب الإجازة بنجاح.');
+}
     /**
      * عرض صفحة الإدارة (لوحة تحكم المدير)
      */
     public function adminIndex()
     {
         $user = Auth::user();
-        $employee = $user->employee;
         $role = $user->role?->name;
 
-        // 1. طلبات الإجازة الخاصة بالمدير نفسه (لجدول "حالة طلباتي الأخيرة")
-        $myRequests = LeaveRequest::where('employee_id', $employee->id ?? 0)
-            ->latest()
-            ->take(5)
-            ->get();
-
-        // 2. طلبات الإجازات للموظفين (بصفته مديراً)
+        // 1. طلبات الإجازات فقط (لأن مدير القسم يرى الإجازات فقط)
         $leaveQuery = LeaveRequest::with(['employee.department', 'leaveType']);
 
+        // 2. طلبات القروض (لن تظهر لمدير القسم)
+        $loanRequests = collect([]); // فارغة لمدير القسم
+
         if ($role === 'مدير القسم') {
-            $deptId = $employee->department_id ?? null;
+            $deptId = $user->employee->department_id ?? null;
             if ($deptId) {
-                $leaveQuery->whereHas('employee', function($q) use ($deptId, $employee) {
-                    $q->where('department_id', $deptId)
-                      ->where('id', '!=', $employee->id); // استبعاد المدير نفسه
+                // فلترة الإجازات حسب القسم فقط
+                $leaveQuery->whereHas('employee', function ($q) use ($deptId) {
+                    $q->where('department_id', $deptId);
                 });
-            } else {
-                // صمام أمان في حال عدم وجود قسم
-                return view('dashbord.attendance', [
-                    'leaveRequests' => collect([]),
-                    'loanRequests' => collect([]),
-                    'leaveStats' => ['pending' => 0, 'approved' => 0, 'rejected' => 0, 'total' => 0],
-                    'loanStats' => ['pending' => 0, 'approved' => 0, 'rejected' => 0, 'total' => 0],
-                    'myRequests' => $myRequests,
-                ])->with('error', 'لم يتم العثور على قسم مرتبط بحسابك.');
             }
+        } else {
+            // مدير النظام يرى جميع طلبات القروض
+            $loanRequests = \App\Models\LoanRequest::with('employee')->latest()->get();
         }
 
         $leaveRequests = $leaveQuery->latest()->get();
 
-        // 3. طلبات القروض
-        $loanRequests = \App\Models\LoanRequest::with('employee')->latest()->get();
-
-        // 4. إحصائيات الإجازات
+        // إحصائيات الإجازات
         $leaveStats = [
             'pending'  => LeaveRequest::where('status', 'pending')->count(),
             'approved' => LeaveRequest::where('status', 'approved')->count(),
@@ -133,7 +126,7 @@ class LeaveRequestController extends Controller
             'total'    => LeaveRequest::count(),
         ];
 
-        // 5. إحصائيات القروض
+        // إحصائيات القروض (لمدير النظام فقط)
         $loanStats = [
             'pending'  => \App\Models\LoanRequest::where('status', 'pending')->count(),
             'approved' => \App\Models\LoanRequest::where('status', 'approved')->count(),
@@ -141,9 +134,10 @@ class LeaveRequestController extends Controller
             'total'    => \App\Models\LoanRequest::count(),
         ];
 
-        return view('dashbord.attendance', compact('leaveRequests', 'loanRequests', 'leaveStats', 'loanStats', 'myRequests'));
-    }
+        $title = "إدارة الطلبات";
 
+        return view('dashbord.attendance', compact('leaveRequests', 'loanRequests', 'leaveStats', 'loanStats', 'title'));
+    }
     /**
      * تحديث حالة الطلب (موافقة / رفض) من قبل المدير
      */

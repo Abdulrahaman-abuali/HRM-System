@@ -5,6 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>تسجيل الدخول - نظام إدارة الموارد البشرية</title>
     <link rel="stylesheet" href="{{ asset('style/CSS.css') }}">
+    <style>
+        /* إضافة تنسيقات للرسائل */
+        .alert {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        .alert-danger {
+            background: #fee2e2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+        }
+        .alert-success {
+            background: #dcfce7;
+            color: #16a34a;
+            border: 1px solid #bbf7d0;
+        }
+    </style>
 </head>
 <body class="auth-page">
     <main class="auth-wrapper">
@@ -17,6 +36,29 @@
                 <p class="brand-subtitle">شركة البرمجيات الصغيرة</p>
             </header>
 
+            {{-- عرض رسائل الخطأ --}}
+            @if(session('error'))
+                <div class="alert alert-danger">
+                    {{ session('error') }}
+                </div>
+            @endif
+
+            {{-- عرض أخطاء التحقق --}}
+            @if($errors->any())
+                <div class="alert alert-danger">
+                    @foreach($errors->all() as $error)
+                        {{ $error }}<br>
+                    @endforeach
+                </div>
+            @endif
+
+            {{-- عرض رسائل النجاح --}}
+            @if(session('success'))
+                <div class="alert alert-success">
+                    {{ session('success') }}
+                </div>
+            @endif
+
             <form class="auth-form" action="{{ route('login') }}" method="post">
                 @csrf
                 <div class="form-group">
@@ -27,6 +69,7 @@
                         type="email"
                         class="form-control"
                         placeholder="name@company.com"
+                        value="{{ old('email') }}"
                         required
                     >
                 </div>
