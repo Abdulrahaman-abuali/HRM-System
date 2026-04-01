@@ -200,9 +200,12 @@
                 </div>
                 <div class="stat-value">{{ $stats['today_attendance'] }}</div>
                 <div class="stat-footer">
-                    نسبة الحضور: {{ $stats['total_employees'] > 0 ? round(($stats['today_attendance'] / $stats['total_employees']) * 100) : 0 }}%
+                    نسبة الحضور:
+                    {{ $stats['total_employees'] > 0 ? round(($stats['today_attendance'] / $stats['total_employees']) * 100) : 0 }}%
                     <div class="progress-bar">
-                        <div class="progress-fill" style="width: {{ $stats['total_employees'] > 0 ? ($stats['today_attendance'] / $stats['total_employees']) * 100 : 0 }}%"></div>
+                        <div class="progress-fill"
+                            style="width: {{ $stats['total_employees'] > 0 ? ($stats['today_attendance'] / $stats['total_employees']) * 100 : 0 }}%">
+                        </div>
                     </div>
                 </div>
             </div>
@@ -242,8 +245,10 @@
                 @forelse($latestLeaves as $leave)
                     <div class="list-item">
                         <div>
-                            <div class="item-name">{{ $leave->employee->first_name }} {{ $leave->employee->last_name }}</div>
-                            <div class="item-detail">{{ $leave->leaveType->name ?? 'إجازة' }} • من {{ $leave->start_date }} إلى {{ $leave->end_date }}</div>
+                            <div class="item-name">{{ $leave->employee->first_name }} {{ $leave->employee->last_name }}
+                            </div>
+                            <div class="item-detail">{{ $leave->leaveType->name ?? 'إجازة' }} • من
+                                {{ $leave->start_date }} إلى {{ $leave->end_date }}</div>
                         </div>
                         <span class="badge badge-pending">قيد المراجعة</span>
                     </div>
@@ -264,8 +269,10 @@
                 @forelse($pendingLoans ?? [] as $loan)
                     <div class="list-item">
                         <div>
-                            <div class="item-name">{{ $loan->employee->first_name }} {{ $loan->employee->last_name }}</div>
-                            <div class="item-detail">{{ number_format($loan->amount, 2) }} ريال • {{ $loan->months }} شهر</div>
+                            <div class="item-name">{{ $loan->employee->first_name }} {{ $loan->employee->last_name }}
+                            </div>
+                            <div class="item-detail">{{ number_format($loan->amount, 2) }} ريال • {{ $loan->months }} شهر
+                            </div>
                         </div>
                         <span class="badge badge-pending">قيد المراجعة</span>
                     </div>
@@ -290,7 +297,8 @@
                     <div class="list-item">
                         <div>
                             <div class="item-name">{{ $emp->first_name }} {{ $emp->last_name }}</div>
-                            <div class="item-detail">{{ $emp->department->name ?? 'بدون قسم' }} • {{ $emp->jobTitle->name ?? '' }}</div>
+                            <div class="item-detail">{{ $emp->department->name ?? 'بدون قسم' }} •
+                                {{ $emp->jobTitle->name ?? '' }}</div>
                         </div>
                         <span class="badge badge-active">نشط</span>
                     </div>
@@ -333,7 +341,9 @@
                 @php
                     $currentMonth = now()->format('Y-m');
                     $totalSalaries = \App\Models\Salary::where('month', $currentMonth)->count();
-                    $paidSalaries = \App\Models\Salary::where('month', $currentMonth)->where('status', 'مدفوع')->count();
+                    $paidSalaries = \App\Models\Salary::where('month', $currentMonth)
+                        ->where('status', 'مدفوع')
+                        ->count();
                     $totalAmount = \App\Models\Salary::where('month', $currentMonth)->sum('net_salary');
                 @endphp
                 <div class="list-item">
@@ -341,7 +351,8 @@
                         <div class="item-name">الموظفين</div>
                         <div class="item-detail">{{ $paidSalaries }} / {{ $totalSalaries }} مدفوع</div>
                     </div>
-                    <span class="badge {{ $paidSalaries == $totalSalaries && $totalSalaries > 0 ? 'badge-active' : 'badge-pending' }}">
+                    <span
+                        class="badge {{ $paidSalaries == $totalSalaries && $totalSalaries > 0 ? 'badge-active' : 'badge-pending' }}">
                         {{ $paidSalaries == $totalSalaries && $totalSalaries > 0 ? 'مكتمل' : 'قيد التنفيذ' }}
                     </span>
                 </div>
@@ -361,7 +372,10 @@
                     <h3 class="card-title">📋 آخر نشاطات النظام</h3>
                     <p class="card-subtitle">أحدث العمليات التي تمت في النظام</p>
                 </div>
-         <a href="{{ route('activity.log') }}" class="btn-link">عرض السجل الكامل →</a>
+                @if (auth()->user()->role?->name === 'مدير النظام')
+                    <a href="{{ route('activity.log') }}" class="btn-link">عرض السجل الكامل →</a>
+                @endif
+               
             </div>
             @foreach ($activities as $activity)
                 <div class="list-item">

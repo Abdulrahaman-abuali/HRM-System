@@ -41,63 +41,60 @@ class LeaveRequestController extends Controller
 
         return view('employees.leaves', compact('leaves', 'leaveTypes', 'loanRequests', 'activeLoans'));
     }
-public function store(Request $request)
-{
-    $request->validate([
-        'leave_type_id' => 'required|exists:leave_types,id',
-        'start_date'    => 'required|date|after_or_equal:today',
-        'end_date'      => 'required|date|after:start_date',
-        'reason'        => 'nullable|string|max:1000',
-    ]);
-
-    $employee = Auth::user()->employee;
-    $userRole = Auth::user()->role?->name;
-
-    LeaveRequest::create([
-        'employee_id'   => $employee->id,
-        'leave_type_id' => $request->leave_type_id,
-        'start_date'    => $request->start_date,
-        'end_date'      => $request->end_date,
-        'reason'        => $request->reason,
-        'status'        => 'pending',
-    ]);
-
-    // إشعار لمدير النظام
-    $admin = User::whereHas('role', function ($q) {
-        $q->where('name', 'مدير النظام');
-    })->first();
-
-    if ($admin) {
-        Notification::create([
-            'user_id'         => $admin->id,
-            'notifiable_id'   => $admin->id,
-            'notifiable_type' => 'App\Models\User',
-            'title'           => 'طلب إجازة جديد 📅',
-            'text'            => 'قام الموظف ' . $employee->first_name . ' بتقديم طلب إجازة جديد بانتظار موافقتك.',
-            'type'            => 'reminder',
-            'source'          => 'نظام الإجازات',
-            'is_read'         => false,
+    public function store(Request $request)
+    {
+        $request->validate([
+            'leave_type_id' => 'required|exists:leave_types,id',
+            'start_date'    => 'required|date|after_or_equal:today',
+            'end_date'      => 'required|date|after:start_date',
+            'reason'        => 'nullable|string|max:1000',
         ]);
-    }
 
-    // ✅ التوجيه حسب دور المستخدم
-    if ($userRole === 'مدير القسم') {
-        return redirect()->route('employee.dashboard')
+        $employee = Auth::user()->employee;
+        $userRole = Auth::user()->role?->name;
+
+        LeaveRequest::create([
+            'employee_id'   => $employee->id,
+            'leave_type_id' => $request->leave_type_id,
+            'start_date'    => $request->start_date,
+            'end_date'      => $request->end_date,
+            'reason'        => $request->reason,
+            'status'        => 'pending',
+        ]);
+
+        // إشعار لمدير النظام
+        $admin = User::whereHas('role', function ($q) {
+            $q->where('name', 'مدير النظام');
+        })->first();
+
+        if ($admin) {
+            Notification::create([
+                'user_id'         => $admin->id,
+                'notifiable_id'   => $admin->id,
+                'notifiable_type' => 'App\Models\User',
+                'title'           => 'طلب إجازة جديد 📅',
+                'text'            => 'قام الموظف ' . $employee->first_name . ' بتقديم طلب إجازة جديد بانتظار موافقتك.',
+                'type'            => 'reminder',
+                'source'          => 'نظام الإجازات',
+                'is_read'         => false,
+            ]);
+        }
+
+        // ✅ التوجيه حسب دور المستخدم
+        if ($userRole === 'مدير القسم') {
+            return redirect()->route('employee.dashboard')
+                ->with('success', 'تم إرسال طلب الإجازة بنجاح.');
+        }
+
+        return redirect()->route('requests.index')
             ->with('success', 'تم إرسال طلب الإجازة بنجاح.');
     }
-
-    return redirect()->route('requests.index')
-        ->with('success', 'تم إرسال طلب الإجازة بنجاح.');
-}
-    /**
-     * عرض صفحة الإدارة (لوحة تحكم المدير)
-     */
     public function adminIndex()
     {
         $user = Auth::user();
         $role = $user->role?->name;
 
-        // 1. طلبات الإجازات فقط (لأن مدير القسم يرى الإجازات فقط)
+        // 1. طلبات الإجازات فقط
         $leaveQuery = LeaveRequest::with(['employee.department', 'leaveType']);
 
         // 2. طلبات القروض (لن تظهر لمدير القسم)
@@ -106,9 +103,10 @@ public function store(Request $request)
         if ($role === 'مدير القسم') {
             $deptId = $user->employee->department_id ?? null;
             if ($deptId) {
-                // فلترة الإجازات حسب القسم فقط
-                $leaveQuery->whereHas('employee', function ($q) use ($deptId) {
-                    $q->where('department_id', $deptId);
+                // ✅ فلترة الإجازات حسب القسم، واستبعاد طلبات المدير نفسه
+                $leaveQuery->whereHas('employee', function ($q) use ($deptId, $user) {
+                    $q->where('department_id', $deptId)
+                        ->where('user_id', '!=', $user->id); // استبعاد طلبات المدير نفسه
                 });
             }
         } else {

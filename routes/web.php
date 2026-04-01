@@ -35,10 +35,20 @@ Route::prefix('face-attendance')->group(function () {
 
 /*
 |--------------------------------------------------------------------------
-| 2. المسارات المحمية (تتطلب تسجيل دخول)
+| 2. مسارات تغيير كلمة المرور (تتطلب تسجيل دخول فقط)
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth'])->group(function () {
+    Route::get('/change-password', [PagesController::class, 'showChangePasswordForm'])->name('password.change');
+    Route::post('/change-password', [PagesController::class, 'updatePassword'])->name('password.update');
+});
+
+/*
+|--------------------------------------------------------------------------
+| 3. المسارات المحمية (تتطلب تسجيل دخول + التحقق من تغيير كلمة المرور)
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth', 'check.must.change.password'])->group(function () {
 
     // --- مسارات مشتركة ---
     Route::get('/salaries', [PagesController::class, 'showSalariesPage'])->name('salaries');
@@ -69,10 +79,10 @@ Route::middleware(['auth'])->group(function () {
     });
 
     /*
-    |--------------------------------------------------------------------------
-    | مسارات الإدارة المشتركة (مدير النظام + مدير القسم)
-    |--------------------------------------------------------------------------
-    */
+|--------------------------------------------------------------------------
+| مسارات الإدارة المشتركة (مدير النظام + مدير القسم)
+|--------------------------------------------------------------------------
+*/
     Route::middleware(['role:مدير النظام,مدير القسم'])->group(function () {
         Route::get('/dashbord', [PagesController::class, 'showDashboardPage'])->name('dashbord');
         Route::get('/manager/dashboard', [PagesController::class, 'showDashboardPage'])->name('employees.dashboard_mangers');
@@ -85,13 +95,19 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/admin/tasks', [TaskController::class, 'adminIndex'])->name('tasks.admin');
         Route::post('/tasks', [TaskController::class, 'store'])->name('tasks.store');
         Route::get('/get-managers/{departmentId}', [EmployeeController::class, 'getManagers']);
-    });
 
+        // ✅ أضف هذا السطر هنا
+        Route::post('/admin/leaves/{id}/status', [LeaveRequestController::class, 'updateStatus'])->name('admin.leaves.status');
+
+        // مسارات الإشعارات لمدير القسم
+        Route::post('/notifications/send-to-department', [NotificationController::class, 'sendToDepartment'])->name('notifications.sendToDepartment');
+        Route::post('/notifications/send-to-employee-department', [NotificationController::class, 'sendToEmployeeInDepartment'])->name('notifications.sendToEmployeeDepartment');
+    });
     /*
-    |--------------------------------------------------------------------------
-    | مسارات "مدير النظام" حصراً
-    |--------------------------------------------------------------------------
-    */
+|--------------------------------------------------------------------------
+| مسارات "مدير النظام" حصراً
+|--------------------------------------------------------------------------
+*/
     Route::middleware(['role:مدير النظام'])->group(function () {
         // إدارة الموظفين
         Route::get('/employees/create', [EmployeeController::class, 'create'])->name('employees.create');
@@ -100,13 +116,17 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/employees/{employee}', [EmployeeController::class, 'update'])->name('employees.update');
         Route::delete('/employees/{employee}', [EmployeeController::class, 'destroy'])->name('employees.destroy');
         Route::get('/employees/{employee}', [EmployeeController::class, 'show'])->name('employees.show');
+        Route::post('/notifications/send-to-employee', [NotificationController::class, 'sendToEmployee'])->name('notifications.sendToEmployee');
 
         // إدارة الرواتب
         Route::put('/salaries/update', [PagesController::class, 'updateSalary'])->name('salaries.update');
         Route::post('/salaries/{id}/pay', [PagesController::class, 'paySalary'])->name('salaries.pay');
         Route::post('/salaries/pay-all', [PagesController::class, 'payAllSalaries'])->name('salaries.payAll');
         Route::post('/salaries/generate', [PagesController::class, 'generateMonthlySalaries'])->name('salaries.generate');
+
+        // ✅ أضف هذا السطر هنا
         Route::get('/activity-log', [PagesController::class, 'showActivityLogPage'])->name('activity.log');
+
         // التقارير
         Route::get('/reports', [ReportsController::class, 'index'])->name('reports');
         Route::match(['get', 'post'], '/reports/generate', [ReportsController::class, 'generate'])->name('reports.generate');
@@ -115,9 +135,8 @@ Route::middleware(['auth'])->group(function () {
         // إدارة المستخدمين والمهام
         Route::resource('users', UserController::class)->except(['create', 'store', 'show']);
         Route::delete('/tasks/{id}', [TaskController::class, 'destroy'])->name('tasks.destroy');
-        Route::post('/admin/leaves/{id}/status', [LeaveRequestController::class, 'updateStatus'])->name('admin.leaves.status');
 
-        // ✅ مسارات الموافقة على طلبات القروض
+        // مسارات الموافقة على طلبات القروض
         Route::post('/loans/{id}/approve', [LoanRequestController::class, 'approve'])->name('loans.approve');
         Route::post('/loans/{id}/reject', [LoanRequestController::class, 'reject'])->name('loans.reject');
 

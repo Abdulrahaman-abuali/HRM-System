@@ -12,6 +12,7 @@ use App\Models\Notification;
 use App\Models\LeaveRequest;
 use App\Models\Employee;
 use App\Models\ActivityLog;
+use Illuminate\Support\Facades\Hash;
 
 class PagesController extends Controller
 {
@@ -26,51 +27,57 @@ class PagesController extends Controller
     /**
      * معالجة عملية تسجيل الدخول + تسجيل الحضور تلقائياً
      */
-    public function login(Request $request)
-    {
-        $credentials = $request->validate([
-            'email' => 'required|email',
-            'password' => 'required',
-        ]);
+  public function login(Request $request)
+{
+    $credentials = $request->validate([
+        'email' => 'required|email',
+        'password' => 'required',
+    ]);
 
-        // ✅ الخطوة 1: البحث عن المستخدم أولاً
-        $user = User::where('email', $credentials['email'])->first();
+    // ✅ الخطوة 1: البحث عن المستخدم أولاً
+    $user = User::where('email', $credentials['email'])->first();
 
-        // ✅ الخطوة 2: التحقق من وجود المستخدم وحالة نشاطه
-        if (!$user) {
-            return back()->withErrors(['email' => 'بيانات الدخول غير صحيحة.']);
-        }
-
-        if ($user->is_active != 1) {
-            return back()->withErrors(['email' => 'الحساب غير مفعل. يرجى التواصل مع مدير النظام.']);
-        }
-
-        // ✅ الخطوة 3: محاولة تسجيل الدخول
-        if (!Auth::attempt($credentials)) {
-            return back()->withErrors(['email' => 'كلمة المرور غير صحيحة.']);
-        }
-
-        $request->session()->regenerate();
-
-        // التوجيه بناءً على الدور (Role)
-        $roleName = $user->role?->name;
-
-        if ($roleName === 'مدير النظام') {
-            return redirect()->route('dashbord');
-        }
-
-        if ($roleName === 'مدير القسم') {
-            return redirect()->route('employee.dashboard');
-        }
-
-        if ($roleName === 'موظف') {
-            return redirect()->route('employee.dashboard');
-        }
-
-        // في حال عدم وجود دور معروف
-        Auth::logout();
-        return back()->withErrors(['email' => 'عفواً، لا يمتلك هذا الحساب صلاحيات الوصول للنظام.']);
+    // ✅ الخطوة 2: التحقق من وجود المستخدم وحالة نشاطه
+    if (!$user) {
+        return back()->withErrors(['email' => 'بيانات الدخول غير صحيحة.']);
     }
+
+    if ($user->is_active != 1) {
+        return back()->withErrors(['email' => 'الحساب غير مفعل. يرجى التواصل مع مدير النظام.']);
+    }
+
+    // ✅ الخطوة 3: محاولة تسجيل الدخول
+    if (!Auth::attempt($credentials)) {
+        return back()->withErrors(['email' => 'كلمة المرور غير صحيحة.']);
+    }
+
+    $request->session()->regenerate();
+    $user = Auth::user();
+
+    // ✅ التحقق من الحاجة لتغيير كلمة المرور (أول تسجيل دخول)
+    if ($user->must_change_password) {
+        return redirect()->route('password.change')->with('warning', 'يرجى تغيير كلمة المرور الخاصة بك لأول مرة.');
+    }
+
+    // التوجيه بناءً على الدور (Role)
+    $roleName = $user->role?->name;
+
+    if ($roleName === 'مدير النظام') {
+        return redirect()->route('dashbord');
+    }
+
+    if ($roleName === 'مدير القسم') {
+        return redirect()->route('employee.dashboard');
+    }
+
+    if ($roleName === 'موظف') {
+        return redirect()->route('employee.dashboard');
+    }
+
+    // في حال عدم وجود دور معروف
+    Auth::logout();
+    return back()->withErrors(['email' => 'عفواً، لا يمتلك هذا الحساب صلاحيات الوصول للنظام.']);
+}
     /**
      * لوحة تحكم المدير
      */
@@ -801,5 +808,35 @@ class PagesController extends Controller
     {
         $activities = ActivityLog::latest()->paginate(20);
         return view('dashbord.activity_log', compact('activities'));
+    }
+    /**
+     * عرض صفحة تغيير كلمة المرور
+     */
+    public function showChangePasswordForm()
+    {
+        return view('auth.change_password');
+    }
+
+
+    public function updatePassword(Request $request)
+    {
+        $request->validate([
+            'current_password' => 'required|string',
+            'new_password' => 'required|string|min:8|confirmed',
+        ]);
+
+        $user = Auth::user();
+
+        // التحقق من كلمة المرور الحالية
+        if (!Hash::check($request->current_password, $user->password)) {
+            return back()->withErrors(['current_password' => 'كلمة المرور الحالية غير صحيحة.']);
+        }
+
+        // تحديث كلمة المرور
+        $user->password = Hash::make($request->new_password);
+        $user->must_change_password = false;
+        $user->save();
+
+        return redirect()->route('employee.dashboard')->with('success', 'تم تغيير كلمة المرور بنجاح.');
     }
 }

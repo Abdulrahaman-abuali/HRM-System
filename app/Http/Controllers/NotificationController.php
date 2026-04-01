@@ -85,5 +85,114 @@ class NotificationController extends Controller
     return back()->with('success', 'تم إرسال الإشعار العام لجميع الموظفين بنجاح.');
 }
 
+/**
+ * إرسال إشعار لموظف واحد (من صفحة الإشعارات)
+ */
+public function sendToEmployee(Request $request)
+{
+    $request->validate([
+        'employee_id' => 'required|exists:employees,id',
+        'title' => 'required|string|max:255',
+        'message' => 'required|string',
+    ]);
 
+    $employee = \App\Models\Employee::findOrFail($request->employee_id);
+
+    if (!$employee->user_id) {
+        return back()->with('error', 'هذا الموظف ليس لديه حساب مستخدم.');
+    }
+
+    \App\Models\Notification::create([
+        'user_id' => $employee->user_id,
+        'title'   => '📢 ' . $request->title,
+        'text'    => $request->message,
+        'type'    => 'important',
+        'source'  => 'إشعار خاص',
+        'is_read' => false,
+    ]);
+
+    return back()->with('success', 'تم إرسال الإشعار إلى ' . $employee->first_name . ' ' . $employee->last_name . ' بنجاح.');
+}
+/**
+ * إرسال إشعار عام لقسم مدير القسم
+ */
+public function sendToDepartment(Request $request)
+{
+    $user = auth()->user();
+    $departmentId = $user->employee->department_id ?? null;
+
+    if (!$departmentId) {
+        return back()->with('error', 'لا يمكنك إرسال إشعارات لأن حسابك غير مرتبط بقسم.');
+    }
+
+    $request->validate([
+        'title' => 'required|string|max:255',
+        'message' => 'required|string',
+    ]);
+
+    // جلب جميع الموظفين في نفس القسم
+    $employees = \App\Models\Employee::where('department_id', $departmentId)->get();
+
+    if ($employees->isEmpty()) {
+        return back()->with('error', 'لا يوجد موظفين في قسمك لإرسال الإشعارات لهم.');
+    }
+
+    $sentCount = 0;
+    foreach ($employees as $employee) {
+        if ($employee->user_id) {
+            \App\Models\Notification::create([
+                'user_id' => $employee->user_id,
+                'title'   => '📢 ' . $request->title,
+                'text'    => $request->message,
+                'type'    => 'important',
+                'source'  => 'إعلان من مدير القسم',
+                'is_read' => false,
+            ]);
+            $sentCount++;
+        }
+    }
+
+    return back()->with('success', "تم إرسال الإشعار إلى {$sentCount} موظف في قسمك بنجاح.");
+}
+
+/**
+ * إرسال إشعار لموظف في قسم مدير القسم
+ */
+public function sendToEmployeeInDepartment(Request $request)
+{
+    $user = auth()->user();
+    $departmentId = $user->employee->department_id ?? null;
+
+    if (!$departmentId) {
+        return back()->with('error', 'لا يمكنك إرسال إشعارات لأن حسابك غير مرتبط بقسم.');
+    }
+
+    $request->validate([
+        'employee_id' => 'required|exists:employees,id',
+        'title' => 'required|string|max:255',
+        'message' => 'required|string',
+    ]);
+
+    $employee = \App\Models\Employee::findOrFail($request->employee_id);
+
+    // التأكد أن الموظف في نفس القسم
+    if ($employee->department_id != $departmentId) {
+        return back()->with('error', 'لا يمكنك إرسال إشعار لموظف خارج قسمك.');
+    }
+
+    if (!$employee->user_id) {
+        return back()->with('error', 'هذا الموظف ليس لديه حساب مستخدم.');
+    }
+
+    \App\Models\Notification::create([
+        'user_id' => $employee->user_id,
+        'title'   => '📢 ' . $request->title,
+        'text'    => $request->message,
+        'type'    => 'important',
+        'source'  => 'إشعار من مدير القسم',
+        'is_read' => false,
+    ]);
+
+    return back()->with('success', 'تم إرسال الإشعار إلى ' . $employee->first_name . ' ' . $employee->last_name . ' بنجاح.');
+}
 }

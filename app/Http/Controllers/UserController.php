@@ -19,22 +19,22 @@ class UserController extends Controller
 
         // 1. البحث بالاسم أو البريد
         if ($request->filled('search')) {
-            $query->where(function($q) use ($request) {
+            $query->where(function ($q) use ($request) {
                 $q->where('name', 'like', '%' . $request->search . '%')
-                  ->orWhere('email', 'like', '%' . $request->search . '%');
+                    ->orWhere('email', 'like', '%' . $request->search . '%');
             });
         }
 
         // 2. فلترة بالدور (باستخدام اسم الدور)
         if ($request->filled('role')) {
-            $query->whereHas('role', function($q) use ($request) {
+            $query->whereHas('role', function ($q) use ($request) {
                 $q->where('name', $request->role);
             });
         }
 
         // 3. فلترة بالحالة (البحث في جدول الموظفين)
         if ($request->filled('status')) {
-            $query->whereHas('employee', function($q) use ($request) {
+            $query->whereHas('employee', function ($q) use ($request) {
                 $q->where('status', $request->status);
             });
         }
@@ -52,7 +52,6 @@ class UserController extends Controller
 
         return view('users.create_user', compact('roles', 'departments', 'job_titles'));
     }
-
     // حفظ مستخدم جديد
     public function store(Request $request)
     {
@@ -65,22 +64,23 @@ class UserController extends Controller
             'gender' => 'required|string',
             'birth_date' => 'required|date',
             'hire_date' => 'required|date',
-            'status' => 'required|in:نشط,غير نشط', // التحقق من القيم المسموحة
+            'status' => 'required|in:نشط,غير نشط',
             'department_id' => 'nullable|exists:departments,id',
             'job_title_id' => 'nullable|exists:job_titles,id',
             'password' => 'required|min:6',
             'role_id' => 'required|exists:roles,id',
         ]);
 
-        // إنشاء المستخدم مع مزامنة status و is_active
-        $user = User::create([
-            'name' => $validated['first_name'] . ' ' . $validated['last_name'],
-            'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
-            'role_id' => $validated['role_id'],
-            'status' => $validated['status'], // ✅ حفظ النص
-            'is_active' => ($validated['status'] == 'نشط') ? 1 : 0, // ✅ مزامنة is_active
-        ]);
+        // إنشاء المستخدم باستخدام save() بدلاً من create()
+        $user = new User();
+        $user->name = $validated['first_name'] . ' ' . $validated['last_name'];
+        $user->email = $validated['email'];
+        $user->password = Hash::make($validated['password']);
+        $user->role_id = $validated['role_id'];
+        $user->status = $validated['status'];
+        $user->is_active = ($validated['status'] == 'نشط') ? 1 : 0;
+        $user->must_change_password = true;
+        $user->save();
 
         // إنشاء الموظف وربطه بالمستخدم
         Employee::create([
@@ -95,13 +95,12 @@ class UserController extends Controller
             'department_id' => $validated['department_id'],
             'job_title_id' => $validated['job_title_id'],
             'hire_date' => $validated['hire_date'],
-            'status' => $validated['status'], // ✅ نفس النص
+            'status' => $validated['status'],
         ]);
 
         return redirect()->route('users.index')
             ->with('success', 'تم إنشاء المستخدم وربطه بملف موظف بنجاح');
     }
-
     // عرض نموذج تعديل مستخدم
     public function edit(\App\Models\User $user)
     {

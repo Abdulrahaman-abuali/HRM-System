@@ -124,12 +124,14 @@ class EmployeeController extends Controller
             return DB::transaction(function () use ($validated, $request) {
 
                 // 3. إنشاء حساب المستخدم (User) للجميع (موظف أو متعاقد)
+                // 3. إنشاء حساب المستخدم (User) للجميع (موظف أو متعاقد)
                 $user = User::create([
                     'name'      => $validated['first_name'] . ' ' . $validated['last_name'],
                     'email'     => $validated['email'],
                     'password'  => Hash::make($validated['password']),
                     'role_id'   => $validated['role_id'],
                     'is_active' => 1,
+                    'must_change_password' => true, // ✅ إضافة هذا السطر
                 ]);
 
                 // 4. إنشاء ملف الموظف وربطه بالـ UserID
@@ -225,145 +227,145 @@ class EmployeeController extends Controller
     /**
      * تحديث بيانات الموظف
      */
-public function update(Request $request, $id)
-{
-    $employee = Employee::with(['salary', 'user'])->findOrFail($id);
+    public function update(Request $request, $id)
+    {
+        $employee = Employee::with(['salary', 'user'])->findOrFail($id);
 
-    // حفظ البيانات القديمة للمقارنة
-    $oldDepartmentId = $employee->department_id;
-    $oldRoleId = $employee->user->role_id;
-    $oldJobTitleId = $employee->job_title_id;
+        // حفظ البيانات القديمة للمقارنة
+        $oldDepartmentId = $employee->department_id;
+        $oldRoleId = $employee->user->role_id;
+        $oldJobTitleId = $employee->job_title_id;
 
-    $validated = $request->validate([
-        'first_name'      => 'required|string|max:255',
-        'last_name'       => 'required|string|max:255',
-        'phone'           => 'required|string',
-        'gender'          => 'required',
-        'birth_date'      => 'required|date',
-        'address'         => 'required|string|max:500',
-        'employment_type' => 'required|string',
-        'manager_id'      => 'nullable|exists:employees,id',
-        'department_id'   => 'required|exists:departments,id',
-        'job_title_id'    => 'required|exists:job_titles,id',
-        'basic_salary'    => 'required|numeric|min:0',
-        'profile_image'   => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-        'contract_start_date' => $request->employment_type === 'contract' ? 'required|date' : 'nullable',
-        'contract_end_date'   => $request->employment_type === 'contract' ? 'required|date|after:contract_start_date' : 'nullable',
-        'role_id'         => 'required|exists:roles,id',
-        // ✅ أضف هذين الحقلين للتحقق
-        'housing_percentage' => 'nullable|numeric|min:0|max:100',
-        'transport_percentage' => 'nullable|numeric|min:0|max:100',
-    ]);
+        $validated = $request->validate([
+            'first_name'      => 'required|string|max:255',
+            'last_name'       => 'required|string|max:255',
+            'phone'           => 'required|string',
+            'gender'          => 'required',
+            'birth_date'      => 'required|date',
+            'address'         => 'required|string|max:500',
+            'employment_type' => 'required|string',
+            'manager_id'      => 'nullable|exists:employees,id',
+            'department_id'   => 'required|exists:departments,id',
+            'job_title_id'    => 'required|exists:job_titles,id',
+            'basic_salary'    => 'required|numeric|min:0',
+            'profile_image'   => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'contract_start_date' => $request->employment_type === 'contract' ? 'required|date' : 'nullable',
+            'contract_end_date'   => $request->employment_type === 'contract' ? 'required|date|after:contract_start_date' : 'nullable',
+            'role_id'         => 'required|exists:roles,id',
+            // ✅ أضف هذين الحقلين للتحقق
+            'housing_percentage' => 'nullable|numeric|min:0|max:100',
+            'transport_percentage' => 'nullable|numeric|min:0|max:100',
+        ]);
 
-    try {
-        DB::transaction(function () use ($validated, $request, $employee, $oldDepartmentId, $oldRoleId, $oldJobTitleId) {
+        try {
+            DB::transaction(function () use ($validated, $request, $employee, $oldDepartmentId, $oldRoleId, $oldJobTitleId) {
 
-            // 1. تحديث بيانات الموظف الأساسية
-            $employee->update([
-                'first_name'      => $validated['first_name'],
-                'last_name'       => $validated['last_name'],
-                'phone'           => $validated['phone'],
-                'age'             => $request->age,
-                'gender'          => $validated['gender'],
-                'birth_date'      => $validated['birth_date'],
-                'address'         => $validated['address'],
-                'employment_type' => $validated['employment_type'],
-                'manager_id'      => $validated['manager_id'],
-                'department_id'   => $validated['department_id'],
-                'job_title_id'    => $validated['job_title_id'],
-                'contract_start_date' => $request->employment_type == 'contract' ? $validated['contract_start_date'] : null,
-                'contract_end_date'   => $request->employment_type == 'contract' ? $validated['contract_end_date'] : null,
-                // ✅ أضف هذه الأسطر
-                'basic_salary'    => $validated['basic_salary'],
-                'housing_percentage' => $request->input('housing_percentage', $employee->housing_percentage ?? 10),
-                'transport_percentage' => $request->input('transport_percentage', $employee->transport_percentage ?? 5),
-            ]);
+                // 1. تحديث بيانات الموظف الأساسية
+                $employee->update([
+                    'first_name'      => $validated['first_name'],
+                    'last_name'       => $validated['last_name'],
+                    'phone'           => $validated['phone'],
+                    'age'             => $request->age,
+                    'gender'          => $validated['gender'],
+                    'birth_date'      => $validated['birth_date'],
+                    'address'         => $validated['address'],
+                    'employment_type' => $validated['employment_type'],
+                    'manager_id'      => $validated['manager_id'],
+                    'department_id'   => $validated['department_id'],
+                    'job_title_id'    => $validated['job_title_id'],
+                    'contract_start_date' => $request->employment_type == 'contract' ? $validated['contract_start_date'] : null,
+                    'contract_end_date'   => $request->employment_type == 'contract' ? $validated['contract_end_date'] : null,
+                    // ✅ أضف هذه الأسطر
+                    'basic_salary'    => $validated['basic_salary'],
+                    'housing_percentage' => $request->input('housing_percentage', $employee->housing_percentage ?? 10),
+                    'transport_percentage' => $request->input('transport_percentage', $employee->transport_percentage ?? 5),
+                ]);
 
-            // 2. معالجة الصورة
-            if ($request->hasFile('profile_image')) {
-                if ($employee->profile_image) {
-                    $oldPath = storage_path('app/employee_faces/' . $employee->profile_image);
-                    if (file_exists($oldPath)) {
-                        unlink($oldPath);
+                // 2. معالجة الصورة
+                if ($request->hasFile('profile_image')) {
+                    if ($employee->profile_image) {
+                        $oldPath = storage_path('app/employee_faces/' . $employee->profile_image);
+                        if (file_exists($oldPath)) {
+                            unlink($oldPath);
+                        }
+                    }
+                    $image = $request->file('profile_image');
+                    $fileName = $employee->id . '.' . $image->getClientOriginalExtension();
+                    $image->move(storage_path('app/employee_faces'), $fileName);
+                    $employee->update(['profile_image' => $fileName]);
+                }
+
+                // 3. تحديث الراتب (آخر راتب للموظف)
+                $lastSalary = Salary::where('employee_id', $employee->id)->latest()->first();
+                if ($lastSalary) {
+                    $lastSalary->update(['basic_salary' => $validated['basic_salary']]);
+                } else {
+                    \App\Models\Salary::create([
+                        'employee_id'  => $employee->id,
+                        'month'        => now()->format('Y-m'),
+                        'basic_salary' => $validated['basic_salary'],
+                        'status'       => 'معلق',
+                    ]);
+                }
+
+                // 4. تحديث حساب المستخدم والصلاحية
+                if ($employee->user) {
+                    $employee->user->update([
+                        'name'    => $validated['first_name'] . ' ' . $validated['last_name'],
+                        'role_id' => $validated['role_id'],
+                    ]);
+                }
+
+                // 5. التحقق من المسمى الوظيفي الجديد
+                $newJobTitle = \App\Models\JobTitle::find($validated['job_title_id']);
+                $isManagerNow = $newJobTitle && str_contains($newJobTitle->name, 'مدير');
+                $wasManagerBefore = $oldJobTitleId && \App\Models\JobTitle::find($oldJobTitleId)?->name ?
+                    str_contains(\App\Models\JobTitle::find($oldJobTitleId)->name, 'مدير') : false;
+
+                // 6. منع وجود مديرين في نفس القسم
+                if ($isManagerNow) {
+                    $existingManager = \App\Models\Employee::where('department_id', $validated['department_id'])
+                        ->where('id', '!=', $employee->id)
+                        ->whereHas('jobTitle', function ($q) {
+                            $q->where('name', 'like', '%مدير%');
+                        })
+                        ->exists();
+
+                    if ($existingManager) {
+                        throw new \Exception('هذا القسم لديه مدير بالفعل!');
                     }
                 }
-                $image = $request->file('profile_image');
-                $fileName = $employee->id . '.' . $image->getClientOriginalExtension();
-                $image->move(storage_path('app/employee_faces'), $fileName);
-                $employee->update(['profile_image' => $fileName]);
-            }
 
-            // 3. تحديث الراتب (آخر راتب للموظف)
-            $lastSalary = Salary::where('employee_id', $employee->id)->latest()->first();
-            if ($lastSalary) {
-                $lastSalary->update(['basic_salary' => $validated['basic_salary']]);
-            } else {
-                \App\Models\Salary::create([
-                    'employee_id'  => $employee->id,
-                    'month'        => now()->format('Y-m'),
-                    'basic_salary' => $validated['basic_salary'],
-                    'status'       => 'معلق',
-                ]);
-            }
-
-            // 4. تحديث حساب المستخدم والصلاحية
-            if ($employee->user) {
-                $employee->user->update([
-                    'name'    => $validated['first_name'] . ' ' . $validated['last_name'],
-                    'role_id' => $validated['role_id'],
-                ]);
-            }
-
-            // 5. التحقق من المسمى الوظيفي الجديد
-            $newJobTitle = \App\Models\JobTitle::find($validated['job_title_id']);
-            $isManagerNow = $newJobTitle && str_contains($newJobTitle->name, 'مدير');
-            $wasManagerBefore = $oldJobTitleId && \App\Models\JobTitle::find($oldJobTitleId)?->name ?
-                str_contains(\App\Models\JobTitle::find($oldJobTitleId)->name, 'مدير') : false;
-
-            // 6. منع وجود مديرين في نفس القسم
-            if ($isManagerNow) {
-                $existingManager = \App\Models\Employee::where('department_id', $validated['department_id'])
-                    ->where('id', '!=', $employee->id)
-                    ->whereHas('jobTitle', function ($q) {
-                        $q->where('name', 'like', '%مدير%');
-                    })
-                    ->exists();
-
-                if ($existingManager) {
-                    throw new \Exception('هذا القسم لديه مدير بالفعل!');
+                // 7. الحالة 1: تمت إزالة صلاحية المدير (كان مديراً والآن ليس مديراً)
+                if ($wasManagerBefore && !$isManagerNow) {
+                    \App\Models\Employee::where('manager_id', $employee->id)
+                        ->update(['manager_id' => null]);
                 }
-            }
 
-            // 7. الحالة 1: تمت إزالة صلاحية المدير (كان مديراً والآن ليس مديراً)
-            if ($wasManagerBefore && !$isManagerNow) {
-                \App\Models\Employee::where('manager_id', $employee->id)
-                    ->update(['manager_id' => null]);
-            }
+                // 8. الحالة 2: أصبح مديراً جديداً (لم يكن مديراً والآن أصبح مديراً)
+                if (!$wasManagerBefore && $isManagerNow) {
+                    \App\Models\Employee::where('department_id', $validated['department_id'])
+                        ->where('id', '!=', $employee->id)
+                        ->update(['manager_id' => $employee->id]);
+                }
 
-            // 8. الحالة 2: أصبح مديراً جديداً (لم يكن مديراً والآن أصبح مديراً)
-            if (!$wasManagerBefore && $isManagerNow) {
-                \App\Models\Employee::where('department_id', $validated['department_id'])
-                    ->where('id', '!=', $employee->id)
-                    ->update(['manager_id' => $employee->id]);
-            }
+                // 9. الحالة 3: تغيير القسم لمدير قائم
+                if ($wasManagerBefore && $isManagerNow && $oldDepartmentId != $validated['department_id']) {
+                    \App\Models\Employee::where('manager_id', $employee->id)
+                        ->where('department_id', $oldDepartmentId)
+                        ->update(['manager_id' => null]);
 
-            // 9. الحالة 3: تغيير القسم لمدير قائم
-            if ($wasManagerBefore && $isManagerNow && $oldDepartmentId != $validated['department_id']) {
-                \App\Models\Employee::where('manager_id', $employee->id)
-                    ->where('department_id', $oldDepartmentId)
-                    ->update(['manager_id' => null]);
+                    \App\Models\Employee::where('department_id', $validated['department_id'])
+                        ->where('id', '!=', $employee->id)
+                        ->update(['manager_id' => $employee->id]);
+                }
+            });
 
-                \App\Models\Employee::where('department_id', $validated['department_id'])
-                    ->where('id', '!=', $employee->id)
-                    ->update(['manager_id' => $employee->id]);
-            }
-        });
-
-        return redirect()->route('employees.index')->with('success', 'تم تحديث بيانات الموظف بنجاح');
-    } catch (\Exception $e) {
-        return back()->withInput()->with('error', 'فشل التحديث: ' . $e->getMessage());
+            return redirect()->route('employees.index')->with('success', 'تم تحديث بيانات الموظف بنجاح');
+        } catch (\Exception $e) {
+            return back()->withInput()->with('error', 'فشل التحديث: ' . $e->getMessage());
+        }
     }
-}
 
     /**
      * عرض تفاصيل الموظف
