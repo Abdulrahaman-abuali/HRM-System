@@ -110,7 +110,7 @@ Route::middleware(['auth'])->group(function () {
 
         // التقارير والنشاطات الإدارية
         Route::get('/reports', [ReportsController::class, 'index'])->name('reports');
-        Route::post('/reports/generate', [ReportsController::class, 'generate'])->name('reports.generate');
+        Route::match(['get', 'post'], '/reports/generate', [ReportsController::class, 'generate'])->name('reports.generate');
         Route::get('/performance', [PagesController::class, 'showPerformancePage'])->name('performance');
 
         // إدارة المستخدمين والصلاحيات والمهام

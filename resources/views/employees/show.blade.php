@@ -1,7 +1,7 @@
 @extends('layout.app')
 
 @section('title')
-    تفاصيل الموظق
+    تفاصيل الموظف
 @endsection
 
 @section('content')
@@ -68,7 +68,7 @@
                             </div>
                             <div class="info-row">
                                 <span class="info-label">العنوان:</span>
-                                <span class="info-value">صنعاء - حي الجامعة - شارع النصر</span>
+                                <span class="info-value">{{ $employee->address }}</span>
                             </div>
                         </div>
                     </section>
@@ -191,28 +191,7 @@
                             </div>
                         </div>
                     </section>
-
                 </div>
-
-                <!-- أزرار العمليات -->
-                <footer class="employee-actions">
-                    <button type="button" class="btn btn-primary">
-                        تعديل المعلومات
-                    </button>
-                    <button type="button" class="btn btn-outline">
-                        عرض سجل الحضور
-                    </button>
-                    <button type="button" class="btn btn-outline">
-                        عرض طلبات الإجازة
-                    </button>
-                    <button type="button" class="btn btn-outline">
-                        عرض تقييمات الأداء
-                    </button>
-                    <button type="button" class="btn btn-danger">
-                        إيقاف الموظف
-                    </button>
-                </footer>
-
             </article>
         </section>
 
