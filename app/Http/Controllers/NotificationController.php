@@ -5,6 +5,7 @@ use App\Models\Notification;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
 
 class NotificationController extends Controller
 {
@@ -83,6 +84,57 @@ class NotificationController extends Controller
     }
 
     return back()->with('success', 'تم إرسال الإشعار العام لجميع الموظفين بنجاح.');
+}
+
+
+
+public function checkNew(Request $request)
+{
+    $user = Auth::user();
+    $lastCheck = $request->input('last_check');
+
+    // إذا لم يكن هناك وقت حفظ مسبق، نستخدم الوقت الحالي ناقص 5 ثوانٍ لتجنب فقد الإشعارات
+    if (!$lastCheck) {
+        $lastCheck = Carbon::now()->subSeconds(5)->toDateTimeString();
+    }
+
+    // جلب الإشعارات الجديدة (غير مقروءة والتي تم إنشاؤها بعد آخر فحص)
+    $newNotifications = Notification::where('user_id', $user->id)
+        ->where('created_at', '>', $lastCheck)
+        ->where('is_read', false)
+        ->orderBy('created_at', 'desc')
+        ->get();
+
+    // الإحصائيات
+    $unreadCount = Notification::where('user_id', $user->id)->where('is_read', false)->count();
+
+    return response()->json([
+        'new_count' => $newNotifications->count(),
+        'new_notifications' => $newNotifications->map(function ($noti) {
+            return [
+                'id' => $noti->id,
+                'title' => $noti->title,
+                'text' => $noti->text,
+                'type' => $noti->type,
+                'source' => $noti->source,
+                'created_at' => $noti->created_at->toDateTimeString(),
+                'link' => $this->getLinkForNotification($noti) // دالة لتوليد رابط (اختياري)
+            ];
+        }),
+        'unread_count' => $unreadCount,
+        'last_check' => now()->toDateTimeString(),
+    ]);
+}
+
+// دالة مساعدة لتحديد رابط الإشعار (مثلاً إذا كان مرتبطًا بإجازة أو راتب)
+private function getLinkForNotification($notification)
+{
+    if ($notification->source == 'نظام الإجازات') {
+        return route('attendance'); // تأكد من صحة الاسم
+    } elseif ($notification->source == 'نظام الرواتب') {
+        return route('payroll.index');
+    }
+    return '#';
 }
 
 

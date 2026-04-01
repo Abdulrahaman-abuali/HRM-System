@@ -9,7 +9,6 @@ use App\Models\Employee;
 use App\Models\User;
 use App\Models\Notification;
 use Illuminate\Http\Request;
-use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
 
 class LoanRequestController extends Controller
