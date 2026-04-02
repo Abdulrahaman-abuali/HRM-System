@@ -94,23 +94,40 @@ class LeaveRequestController extends Controller
         $user = Auth::user();
         $role = $user->role?->name;
 
-        // 1. طلبات الإجازات فقط
+        // 1. طلبات الإجازات
         $leaveQuery = LeaveRequest::with(['employee.department', 'leaveType']);
 
         // 2. طلبات القروض (لن تظهر لمدير القسم)
-        $loanRequests = collect([]); // فارغة لمدير القسم
+        $loanRequests = collect([]);
 
         if ($role === 'مدير القسم') {
             $deptId = $user->employee->department_id ?? null;
             if ($deptId) {
-                // ✅ فلترة الإجازات حسب القسم، واستبعاد طلبات المدير نفسه
                 $leaveQuery->whereHas('employee', function ($q) use ($deptId, $user) {
                     $q->where('department_id', $deptId)
-                        ->where('user_id', '!=', $user->id); // استبعاد طلبات المدير نفسه
+                        ->where('user_id', '!=', $user->id);
                 });
+            } else {
+                $leaveRequests = collect([]);
+                $leaveStats = [
+                    'pending'  => 0,
+                    'approved' => 0,
+                    'rejected' => 0,
+                    'total'    => 0,
+                ];
+                $loanStats = [
+                    'pending'  => 0,
+                    'approved' => 0,
+                    'rejected' => 0,
+                    'total'    => 0,
+                ];
+                $title = "إدارة الطلبات";
+                return view('dashbord.attendance', compact('leaveRequests', 'loanRequests', 'leaveStats', 'loanStats', 'title'));
             }
         } else {
-            // مدير النظام يرى جميع طلبات القروض
+            // ✅ مدير النظام يرى الطلبات التي تحتاج إلى تدخل
+            // (جديد، موافقة مبدئية، رفض مبدئي)
+            $leaveQuery->whereIn('status', ['pending', 'pending_admin', 'rejected_by_dept']);
             $loanRequests = \App\Models\LoanRequest::with('employee')->latest()->get();
         }
 
@@ -152,54 +169,75 @@ class LeaveRequestController extends Controller
         ]);
 
         $newStatus = $request->status;
-        $notificationText = "";
-
-        // جلب النص الحالي المخزن في القاعدة
         $currentReason = $leave->reason ?? 'لا يوجد تبرير سابق';
 
+        // ✅ التحقق من الدور
+        $isDepartmentManager = ($role === 'مدير القسم');
+        $isSystemAdmin = ($role === 'مدير النظام');
+
         if ($newStatus == 'approved') {
-            if ($role === 'مدير القسم') {
-                $leave->update(['status' => 'pending_admin']);
+            if ($isDepartmentManager) {
+                // مدير القسم يوافق مبدئياً
+                $leave->status = 'pending_admin';
                 $msg = 'تمت الموافقة المبدئية بنجاح.';
                 $notificationText = "وافق مدير القسم مبدئياً على إجازتك.";
             } else {
-                $leave->update(['status' => 'approved']);
+                // مدير النظام يوافق نهائياً
+                $leave->status = 'approved';
                 $msg = 'تم الاعتماد النهائي ✅';
                 $notificationText = "تمت الموافقة النهائية على طلب إجازتك.";
             }
-        } else { // حالة الرفض
-            $newEntry = "🚫 رفض (" . $role . "): " . $request->reject_reason;
+            $leave->save();
+
+            if ($employee && $employee->user_id) {
+                Notification::create([
+                    'user_id'         => $employee->user_id,
+                    'notifiable_id'   => $employee->user_id,
+                    'notifiable_type' => 'App\Models\User',
+                    'title'           => 'تحديث إجازة 📅',
+                    'text'            => $notificationText,
+                    'type'            => 'success',
+                    'source'          => 'نظام الإجازات',
+                ]);
+            }
+
+            return back()->with('success', $msg);
+        }
+
+        // حالة الرفض
+        if ($newStatus == 'rejected') {
+            $newEntry = "🚫 رفض (" . ($isDepartmentManager ? 'مبدئي' : 'نهائي') . " - " . $role . "): " . $request->reject_reason;
             $combinedReason = $newEntry . " [!] " . $currentReason;
 
-            if ($role === 'مدير القسم') {
-                $leave->update([
-                    'status' => 'rejected_by_dept',
-                    'reason' => $combinedReason
-                ]);
-                $msg = 'تم الرفض مبدئياً وحفظ التبرير.';
-                $notificationText = "رفض رئيس القسم طلبك مبدئياً.";
+            if ($isDepartmentManager) {
+                // مدير القسم يرفض مبدئياً فقط
+                $leave->status = 'rejected_by_dept';
+                $msg = 'تم الرفض المبدئي بنجاح، بانتظار اعتماد مدير النظام.';
+                $notificationText = "رفض رئيس القسم طلبك مبدئياً، بانتظار اعتماد مدير النظام.";
             } else {
-                $leave->update([
-                    'status' => 'rejected',
-                    'reason' => $combinedReason
-                ]);
-                $msg = 'تم الرفض النهائي للطلب ❌';
-                $notificationText = "رفض مدير النظام طلبك نهائياً.";
+                // مدير النظام يرفض نهائياً
+                $leave->status = 'rejected';
+                $msg = 'تم اعتماد الرفض النهائي للطلب ❌';
+                $notificationText = "تم اعتماد رفض طلب إجازتك نهائياً.";
             }
+            $leave->reason = $combinedReason;
+            $leave->save();
+
+            if ($employee && $employee->user_id) {
+                Notification::create([
+                    'user_id'         => $employee->user_id,
+                    'notifiable_id'   => $employee->user_id,
+                    'notifiable_type' => 'App\Models\User',
+                    'title'           => 'تحديث طلب إجازة ❌',
+                    'text'            => $notificationText,
+                    'type'            => 'important',
+                    'source'          => 'نظام الإجازات',
+                ]);
+            }
+
+            return back()->with('success', $msg);
         }
 
-        if ($employee && $employee->user_id) {
-            \App\Models\Notification::create([
-                'user_id'         => $employee->user_id,
-                'notifiable_id'   => $employee->user_id,
-                'notifiable_type' => 'App\Models\User',
-                'title'           => str_contains($leave->status, 'approved') ? 'تحديث إجازة 📅' : 'رفض إجازة ❌',
-                'text'            => $notificationText,
-                'type'            => str_contains($leave->status, 'approved') ? 'success' : 'important',
-                'source'          => 'نظام الإجازات',
-            ]);
-        }
-
-        return back()->with('success', $msg);
+        return back()->with('error', 'حالة غير معروفة.');
     }
 }

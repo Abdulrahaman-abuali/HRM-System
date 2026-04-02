@@ -10,6 +10,7 @@
     .badge-success { background: #d1fae5; color: #059669; }
     .badge-danger { background: #fee2e2; color: #dc2626; }
     .badge-info { background: #e0e7ff; color: #4f46e5; }
+    .badge-secondary { background: #e2e8f0; color: #475569; }
     .btn-outline { background: #f1f5f9; border: 1px solid #cbd5e1; padding: 4px 8px; border-radius: 6px; cursor: pointer; }
     .btn-outline:hover { background: #e2e8f0; }
 </style>
@@ -129,15 +130,23 @@
                                             @endif
                                         </td>
                                         <td>
-                                            @if($leave->status == 'pending') <span class="badge badge-warning">قيد الانتظار</span>
-                                            @elseif($leave->status == 'pending_admin') <span class="badge badge-info">موافقة مبدئية</span>
-                                            @elseif($leave->status == 'approved') <span class="badge badge-success">معتمدة</span>
-                                            @else <span class="badge badge-danger">مرفوضة</span>
+                                            @if($leave->status == 'pending')
+                                                <span class="badge badge-warning">قيد الانتظار</span>
+                                            @elseif($leave->status == 'pending_admin')
+                                                <span class="badge badge-info">موافقة مبدئية</span>
+                                            @elseif($leave->status == 'rejected_by_dept')
+                                                <span class="badge badge-warning">رفض مبدئي - بانتظار الاعتماد</span>
+                                            @elseif($leave->status == 'approved')
+                                                <span class="badge badge-success">معتمدة</span>
+                                            @elseif($leave->status == 'rejected')
+                                                <span class="badge badge-danger">مرفوضة نهائياً</span>
+                                            @else
+                                                <span class="badge badge-secondary">{{ $leave->status }}</span>
                                             @endif
                                         </td>
                                         <td>
                                             <div class="action-buttons" style="display:flex; gap:5px;">
-                                                @if(in_array($leave->status, ['pending', 'pending_admin']))
+                                                @if(in_array($leave->status, ['pending', 'pending_admin', 'rejected_by_dept']))
                                                     <form action="{{ route('admin.leaves.status', $leave->id) }}" method="POST" style="display:inline;">
                                                         @csrf
                                                         <input type="hidden" name="status" value="approved">
@@ -156,7 +165,9 @@
                                         </td>
                                     </tr>
                                 @empty
-                                    <tr><td colspan="7" style="text-align: center;">لا توجد طلبات إجازات</td></tr>
+                                    <tr>
+                                        <td colspan="7" style="text-align: center;">لا توجد طلبات إجازات</td>
+                                    </tr>
                                 @endforelse
                             </tbody>
                         </table>
@@ -170,6 +181,7 @@
                         <table class="table table-hover">
                             <thead>
                                 <tr>
+
                                     <th>الموظف</th>
                                     <th>المبلغ</th>
                                     <th>عدد الأشهر</th>
@@ -178,7 +190,7 @@
                                     <th>الحالة</th>
                                     <th>الإجراءات</th>
                                 </tr>
-                            </thead>
+                                </thead>
                             <tbody>
                                 @forelse($loanRequests ?? [] as $request)
                                     <tr>
@@ -196,9 +208,12 @@
                                             @endif
                                         </td>
                                         <td>
-                                            @if($request->status == 'pending') <span class="badge badge-warning">قيد المراجعة</span>
-                                            @elseif($request->status == 'approved') <span class="badge badge-success">موافق عليه</span>
-                                            @else <span class="badge badge-danger">مرفوض</span>
+                                            @if($request->status == 'pending')
+                                                <span class="badge badge-warning">قيد المراجعة</span>
+                                            @elseif($request->status == 'approved')
+                                                <span class="badge badge-success">موافق عليه</span>
+                                            @else
+                                                <span class="badge badge-danger">مرفوض</span>
                                             @endif
                                         </td>
                                         <td>
@@ -219,7 +234,9 @@
                                         </td>
                                     </tr>
                                 @empty
-                                    <tr><td colspan="7" style="text-align: center;">لا توجد طلبات قروض</td></tr>
+                                    <tr>
+                                        <td colspan="7" style="text-align: center;">لا توجد طلبات قروض</td>
+                                    </tr>
                                 @endforelse
                             </tbody>
                         </table>
