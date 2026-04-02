@@ -352,127 +352,119 @@
 
     {{-- ========== كود فحص الإشعارات الجديدة وعرض Toast ========== --}}
     <script>
-        (function() {
-            // الحصول على CSRF token من meta tag
-            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-            if (!csrfToken) {
-                console.warn('CSRF token not found, create it');
-                const meta = document.createElement('meta');
-                meta.name = "csrf-token";
-                meta.content = "{{ csrf_token() }}";
-                document.head.appendChild(meta);
-            }
+    (function() {
+        // الحصول على CSRF token من meta tag
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        if (!csrfToken) {
+            console.warn('CSRF token not found, create it');
+            const meta = document.createElement('meta');
+            meta.name = "csrf-token";
+            meta.content = "{{ csrf_token() }}";
+            document.head.appendChild(meta);
+        }
 
-            let lastCheck = localStorage.getItem('lastNotificationCheck') || new Date().toISOString();
+        let lastCheck = localStorage.getItem('lastNotificationCheck') || new Date().toISOString();
 
-            // تشغيل الصوت
-            function playNotificationSound() {
-                const audio = new Audio('/sounds/notification.mp3');
-                audio.play().catch(e => console.log("🔊 لم يتم تشغيل الصوت:", e));
-            }
+        // تشغيل الصوت
+        function playNotificationSound() {
+            const audio = new Audio('/sounds/notification.mp3');
+            audio.play().catch(e => console.log("🔊 لم يتم تشغيل الصوت:", e));
+        }
 
-            // عرض الإشعار كـ Toast
-            function showNotificationToast(title, message, link = null) {
-                const toastContainer = document.querySelector('.toast-container');
-                if (!toastContainer) return;
+        // عرض الإشعار كـ نافذة منبثقة (Modal) باستخدام SweetAlert2
+        function showNotificationPopup(title, message, link = null) {
+            // منع ظهور نوافذ متعددة في نفس الوقت
+            if (window.isPopupShowing) return;
+            window.isPopupShowing = true;
 
-                const toastId = 'toast-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5);
-                const toastHtml = `
-                    <div id="${toastId}" class="toast" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="true" data-bs-delay="10000">
-                        <div class="toast-header">
-                            <strong class="me-auto">🔔 ${escapeHtml(title)}</strong>
-                            <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
-                        </div>
-                        <div class="toast-body">
-                            ${escapeHtml(message)}
-                            ${link ? `<hr><a href="${link}" class="btn btn-sm btn-primary mt-2">عرض التفاصيل</a>` : ''}
-                        </div>
-                    </div>
-                `;
-                toastContainer.insertAdjacentHTML('beforeend', toastHtml);
-                const toastElement = document.getElementById(toastId);
-                if (toastElement && typeof bootstrap !== 'undefined') {
-                    const toast = new bootstrap.Toast(toastElement, { autohide: true, delay: 8000 });
-                    toast.show();
-                    toastElement.addEventListener('hidden.bs.toast', () => toastElement.remove());
+            Swal.fire({
+                title: title,
+                html: `${message}${link && link !== '#' ? `<br><a href="${link}" class="btn btn-primary mt-3" style="color:white;">عرض التفاصيل</a>` : ''}`,
+                icon: 'info',
+                confirmButtonText: 'حسناً',
+                allowOutsideClick: false,
+                showConfirmButton: true,
+                timer: null,
+                willClose: () => { window.isPopupShowing = false; }
+            }).then((result) => {
+                if (result.isConfirmed && link && link !== '#') {
+                    window.location.href = link;
+                }
+                window.isPopupShowing = false;
+            });
+        }
+
+        // تحديث عداد الإشعارات في الشريط الجانبي (للموظف)
+        function updateUnreadCount(count) {
+            const badge = document.querySelector('.nav-item a[href*="notifications"] .badge');
+            if (badge) {
+                if (count > 0) {
+                    badge.textContent = count;
+                    badge.style.display = 'inline-block';
                 } else {
-                    console.warn('Bootstrap not loaded or toast element missing');
+                    badge.style.display = 'none';
                 }
             }
+        }
 
-            // تحديث عداد الإشعارات في الشريط الجانبي (للموظف)
-            function updateUnreadCount(count) {
-                const badge = document.querySelector('.nav-item a[href*="notifications"] .badge');
-                if (badge) {
-                    if (count > 0) {
-                        badge.textContent = count;
-                        badge.style.display = 'inline-block';
-                    } else {
-                        badge.style.display = 'none';
+        // دالة مساعدة لتأمين النصوص (لن نحتاجها بعد الآن، لكن نتركها احتياطاً)
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
+
+        // فحص الإشعارات الجديدة
+        async function checkNewNotifications() {
+            try {
+                const response = await fetch(`{{ route('notifications.check') }}?last_check=${encodeURIComponent(lastCheck)}`, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken
                     }
-                } else {
-                    // إذا لم يوجد badge (مثلاً لمدير النظام) يمكن إضافته أو تجاهل
-                }
-            }
-
-            // دالة مساعدة لتأمين النصوص
-            function escapeHtml(str) {
-                if (!str) return '';
-                return str.replace(/[&<>]/g, function(m) {
-                    if (m === '&') return '&amp;';
-                    if (m === '<') return '&lt;';
-                    if (m === '>') return '&gt;';
-                    return m;
                 });
-            }
 
-            // فحص الإشعارات الجديدة
-            async function checkNewNotifications() {
-                try {
-                    const response = await fetch(`{{ route('notifications.check') }}?last_check=${encodeURIComponent(lastCheck)}`, {
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest',
-                            'Accept': 'application/json',
-                            'X-CSRF-TOKEN': csrfToken
-                        }
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+
+                const data = await response.json();
+
+                if (data.new_count > 0) {
+                    // تشغيل الصوت
+                    playNotificationSound();
+
+                    // عرض كل إشعار جديد في نافذة منبثقة
+                    data.new_notifications.forEach(noti => {
+                        showNotificationPopup(noti.title, noti.text, noti.link);
                     });
 
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
-
-                    const data = await response.json();
-
-                    if (data.new_count > 0) {
-                        // تشغيل الصوت
-                        playNotificationSound();
-
-                        // عرض كل إشعار جديد في Toast
-                        data.new_notifications.forEach(noti => {
-                            showNotificationToast(noti.title, noti.text, noti.link);
-                        });
-
-                        // تحديث عداد الإشعارات غير المقروءة
-                        updateUnreadCount(data.unread_count);
-                    }
-
-                    // تحديث آخر وقت فحص
-                    if (data.last_check) {
-                        lastCheck = data.last_check;
-                        localStorage.setItem('lastNotificationCheck', lastCheck);
-                    }
-                } catch (error) {
-                    console.error('خطأ في فحص الإشعارات:', error);
+                    // تحديث عداد الإشعارات غير المقروءة
+                    updateUnreadCount(data.unread_count);
                 }
-            }
 
-            // بدء الفحص كل 30 ثانية
-            setInterval(checkNewNotifications, 5000);
-            // فحص فوري عند تحميل الصفحة
-            checkNewNotifications();
-        })();
-    </script>
-    <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1100;"></div>
+                // تحديث آخر وقت فحص
+                if (data.last_check) {
+                    lastCheck = data.last_check;
+                    localStorage.setItem('lastNotificationCheck', lastCheck);
+                }
+            } catch (error) {
+                console.error('خطأ في فحص الإشعارات:', error);
+            }
+        }
+
+        // بدء الفحص كل 5 ثوانٍ (يمكن تغييرها حسب الحاجة)
+        setInterval(checkNewNotifications, 5000);
+        // فحص فوري عند تحميل الصفحة
+        checkNewNotifications();
+    })();
+</script>
+
 </body>
 
 </html>
