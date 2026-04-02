@@ -143,6 +143,5 @@ Route::middleware(['auth', 'check.must.change.password'])->group(function () {
 
         // مسارات عامة
         Route::post('/notifications/send-general', [NotificationController::class, 'sendGeneralNotification'])->name('notifications.sendGeneral');
-
     });
 });
