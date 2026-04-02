@@ -119,7 +119,7 @@ public function sendToEmployee(Request $request)
  */
 public function sendToDepartment(Request $request)
 {
-    $user = auth()->user();
+    $user = Auth::user();
     $departmentId = $user->employee->department_id ?? null;
 
     if (!$departmentId) {
@@ -161,7 +161,7 @@ public function sendToDepartment(Request $request)
  */
 public function sendToEmployeeInDepartment(Request $request)
 {
-    $user = auth()->user();
+    $user = Auth::user();
     $departmentId = $user->employee->department_id ?? null;
 
     if (!$departmentId) {
