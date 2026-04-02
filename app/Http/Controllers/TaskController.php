@@ -139,7 +139,7 @@ class TaskController extends Controller
             $statusMessages = [
                 'in_progress' => ['title' => 'بدء تنفيذ مهمة 🏗️', 'text' => 'بدأ العمل على: ', 'type' => 'info'],
                 'completed'   => ['title' => 'اكتمال مهمة ✅', 'text' => 'أتم بنجاح: ', 'type' => 'success'],
-                'rejected'    => ['title' => 'رفض مهمة ❌', 'text' => 'رفض المهمة: ', 'type' => 'danger'],
+                'rejected'    => ['title' => 'رفض مهمة ❌', 'text' => 'رفض المهمة: ', 'type' => 'warning'],
             ];
 
             if (isset($statusMessages[$request->status]) && $task->status !== $request->status) {

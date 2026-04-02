@@ -2,6 +2,7 @@
 <html lang="ar" dir="rtl">
 
 <head>
+    {!! PwaKit::head() !!}
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -441,7 +442,7 @@
 
                     // عرض كل إشعار جديد في نافذة منبثقة
                     data.new_notifications.forEach(noti => {
-                        showNotificationPopup(noti.title, noti.text, noti.link);
+                        showNotificationPopup(noti.title, noti.text);
                     });
 
                     // تحديث عداد الإشعارات غير المقروءة
@@ -464,7 +465,7 @@
         checkNewNotifications();
     })();
 </script>
-
+{!! PwaKit::scripts() !!}
 </body>
 
 </html>
