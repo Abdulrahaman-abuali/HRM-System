@@ -29,137 +29,215 @@ class LeaveRequestController extends Controller
             ->latest()
             ->get();
 
-        return view('employees.leaves', compact('leaves', 'leaveTypes'));
-    }
+        // جلب طلبات القروض للموظف
+        $loanRequests = \App\Models\LoanRequest::where('employee_id', $employee->id)
+            ->latest()
+            ->get();
 
-    /**
-     * حفظ طلب إجازة جديد من قبل الموظف
-     */
+        // جلب القروض النشطة للموظف (اختياري)
+        $activeLoans = \App\Models\Loan::where('employee_id', $employee->id)
+            ->where('status', 'active')
+            ->get();
+
+        return view('employees.leaves', compact('leaves', 'leaveTypes', 'loanRequests', 'activeLoans'));
+    }
     public function store(Request $request)
     {
-    $request->validate([
-        'leave_type_id' => 'required|exists:leave_types,id',
-        'start_date'    => 'required|date|after_or_equal:today',
-        'end_date'      => 'required|date|after:start_date',
-        'reason'        => 'nullable|string|max:1000',
-    ]);
-
-    $employee = Auth::user()->employee;
-
-    // 1. إنشاء طلب الإجازة
-    LeaveRequest::create([
-        'employee_id'   => $employee->id,
-        'leave_type_id' => $request->leave_type_id,
-        'start_date'    => $request->start_date,
-        'end_date'      => $request->end_date,
-        'reason'        => $request->reason,
-        'status'        => 'pending',
-    ]);
-
-    // 2. البحث عن المدير
-    $admin = User::whereHas('role', function($q){
-        $q->where('name', 'مدير النظام');
-    })->first();
-
-    // 3. إنشاء الإشعار (مع إضافة الحقول الإجبارية الجديدة)
-    if ($admin) {
-        Notification::create([
-            'user_id'         => $admin->id, // حقل قديم (اختياري حسب جدولك)
-            'notifiable_id'   => $admin->id, // إلزامي الآن
-            'notifiable_type' => 'App\Models\User', // إلزامي الآن
-            'title'           => 'طلب إجازة جديد 📅',
-            'text'            => 'قام الموظف ' . $employee->first_name . ' بتقديم طلب إجازة جديد بانتظار موافقتك.',
-            'type'            => 'reminder',
-            'source'          => 'نظام الإجازات',
-            'is_read'         => false,
+        $request->validate([
+            'leave_type_id' => 'required|exists:leave_types,id',
+            'start_date'    => 'required|date|after_or_equal:today',
+            'end_date'      => 'required|date|after:start_date',
+            'reason'        => 'nullable|string|max:1000',
         ]);
-    }
 
-    return redirect()->route('leaves.index')->with('success', 'تم إرسال طلب الإجازة بنجاح.');
-    }
+        $employee = Auth::user()->employee;
+        $userRole = Auth::user()->role?->name;
 
-    /**
-     * عرض صفحة الإدارة (لوحة تحكم المدير)
-     */
-    public function adminIndex()
-{
-    $user = Auth::user();
-    $role = $user->role?->name;
+        LeaveRequest::create([
+            'employee_id'   => $employee->id,
+            'leave_type_id' => $request->leave_type_id,
+            'start_date'    => $request->start_date,
+            'end_date'      => $request->end_date,
+            'reason'        => $request->reason,
+            'status'        => 'pending',
+        ]);
 
-    // 1. بناء الاستعلام الأساسي مع العلاقات
-    $query = LeaveRequest::with(['employee.department', 'leaveType']);
+        // إشعار لمدير النظام
+        $admin = User::whereHas('role', function ($q) {
+            $q->where('name', 'مدير النظام');
+        })->first();
 
-    if ($role === 'مدير القسم') {
-        $deptId = $user->employee->department_id ?? null;
-
-        if ($deptId) {
-            $query->whereHas('employee', function($q) use ($deptId) {
-                $q->where('department_id', $deptId);
-            });
-        } else {
-            // في حال عدم وجود قسم، نرسل كل المتغيرات فارغة لمنع انهيار الـ Blade
-            return view('dashbord.attendance', [
-                'data' => collect([]),
-                'stats' => ['pending' => 0, 'approved' => 0, 'rejected' => 0, 'total' => 0],
-                'employees' => collect([]),
-                'allHistory' => collect([]),
-                'date' => now()->toDateString()
-            ])->with('error', 'لم يتم العثور على قسم مرتبط بحسابك.');
+        if ($admin) {
+            Notification::create([
+                'user_id'         => $admin->id,
+                'notifiable_id'   => $admin->id,
+                'notifiable_type' => 'App\Models\User',
+                'title'           => 'طلب إجازة جديد 📅',
+                'text'            => 'قام الموظف ' . $employee->first_name . ' بتقديم طلب إجازة جديد بانتظار موافقتك.',
+                'type'            => 'reminder',
+                'source'          => 'نظام الإجازات',
+                'is_read'         => false,
+            ]);
         }
+
+        // ✅ التوجيه حسب دور المستخدم
+        if ($userRole === 'مدير القسم') {
+            return redirect()->route('employee.dashboard')
+                ->with('success', 'تم إرسال طلب الإجازة بنجاح.');
+        }
+
+        return redirect()->route('requests.index')
+            ->with('success', 'تم إرسال طلب الإجازة بنجاح.');
     }
+    public function adminIndex()
+    {
+        $user = Auth::user();
+        $role = $user->role?->name;
 
-    // 2. جلب البيانات وتسميتها $data لتتوافق مع ملف الـ Blade الخاص بك
-    $data = $query->latest()->get();
+        // 1. طلبات الإجازات
+        $leaveQuery = LeaveRequest::with(['employee.department', 'leaveType']);
 
-    // 3. تحديث الإحصائيات
-    $stats = [
-        'pending'  => $data->where('status', 'pending')->count(),
-        'approved' => $data->where('status', 'approved')->count(),
-        'rejected' => $data->where('status', 'rejected')->count(),
-        'total'    => $data->count(),
-    ];
+        // 2. طلبات القروض (لن تظهر لمدير القسم)
+        $loanRequests = collect([]);
 
-    // 4. متغيرات صمام الأمان (لمنع أخطاء الـ Blade المشتركة)
-    $employees = collect([]);
-    $allHistory = collect([]);
-    $date = now()->toDateString();
+        if ($role === 'مدير القسم') {
+            $deptId = $user->employee->department_id ?? null;
+            if ($deptId) {
+                $leaveQuery->whereHas('employee', function ($q) use ($deptId, $user) {
+                    $q->where('department_id', $deptId)
+                        ->where('user_id', '!=', $user->id);
+                });
+            } else {
+                $leaveRequests = collect([]);
+                $leaveStats = [
+                    'pending'  => 0,
+                    'approved' => 0,
+                    'rejected' => 0,
+                    'total'    => 0,
+                ];
+                $loanStats = [
+                    'pending'  => 0,
+                    'approved' => 0,
+                    'rejected' => 0,
+                    'total'    => 0,
+                ];
+                $title = "إدارة الطلبات";
+                return view('dashbord.attendance', compact('leaveRequests', 'loanRequests', 'leaveStats', 'loanStats', 'title'));
+            }
+        } else {
+            // ✅ مدير النظام يرى الطلبات التي تحتاج إلى تدخل
+            // (جديد، موافقة مبدئية، رفض مبدئي)
+            $leaveQuery->whereIn('status', ['pending', 'pending_admin', 'rejected_by_dept']);
+            $loanRequests = \App\Models\LoanRequest::with('employee')->latest()->get();
+        }
 
-    // 5. التعديل الجوهري: إرسال $data والمجموعات الأخرى ليعمل الجدول
-    return view('dashbord.attendance', compact('data', 'stats', 'date', 'employees', 'allHistory'));
-}
+        $leaveRequests = $leaveQuery->latest()->get();
+
+        // إحصائيات الإجازات
+        $leaveStats = [
+            'pending'  => LeaveRequest::where('status', 'pending')->count(),
+            'approved' => LeaveRequest::where('status', 'approved')->count(),
+            'rejected' => LeaveRequest::where('status', 'rejected')->count(),
+            'total'    => LeaveRequest::count(),
+        ];
+
+        // إحصائيات القروض (لمدير النظام فقط)
+        $loanStats = [
+            'pending'  => \App\Models\LoanRequest::where('status', 'pending')->count(),
+            'approved' => \App\Models\LoanRequest::where('status', 'approved')->count(),
+            'rejected' => \App\Models\LoanRequest::where('status', 'rejected')->count(),
+            'total'    => \App\Models\LoanRequest::count(),
+        ];
+
+        $title = "إدارة الطلبات";
+
+        return view('dashbord.attendance', compact('leaveRequests', 'loanRequests', 'leaveStats', 'loanStats', 'title'));
+    }
     /**
      * تحديث حالة الطلب (موافقة / رفض) من قبل المدير
      */
     public function updateStatus(Request $request, $id)
-{
-    // 1. جلب طلب الإجازة مع بيانات الموظف المرتبط به
-    $leave = LeaveRequest::findOrFail($id);
+    {
+        $leave = LeaveRequest::findOrFail($id);
+        $employee = \App\Models\Employee::find($leave->employee_id);
+        $user = Auth::user();
+        $role = $user->role?->name;
 
-    // جلب الموظف للحصول على الـ user_id الخاص به
-    $employee = \App\Models\Employee::find($leave->employee_id);
-
-    $request->validate([
-        'status' => 'required|in:approved,rejected'
-    ]);
-
-    $leave->update(['status' => $request->status]);
-
-    // 2. إرسال الإشعار باستخدام الـ user_id الموجود في جدول الموظفين
-    if ($employee && $employee->user_id) {
-        $isApproved = $request->status == 'approved';
-
-        \App\Models\Notification::create([
-            'user_id' => $employee->user_id, // هنا نستخدم الـ user_id الصحيح
-            'title'   => $isApproved ? 'تمت الموافقة على إجازتك ✅' : 'تم رفض طلب الإجازة ❌',
-            'text'    => $isApproved
-                ? "تمت الموافقة على طلب إجازتك للفترة من {$leave->start_date} إلى {$leave->end_date}."
-                : "نعتذر، تم رفض طلب إجازتك المقدم للفترة من {$leave->start_date}.",
-            'type'    => $isApproved ? 'success' : 'important',
-            'source'  => 'نظام الإجازات',
+        $request->validate([
+            'status' => 'required|in:approved,rejected',
+            'reject_reason' => 'required_if:status,rejected|nullable|string|max:500'
         ]);
-    }
 
-    $msg = $request->status == 'approved' ? 'تمت الموافقة وإرسال الإشعار' : 'تم الرفض وإرسال الإشعار';
-    return back()->with('success', $msg);
-}
+        $newStatus = $request->status;
+        $currentReason = $leave->reason ?? 'لا يوجد تبرير سابق';
+
+        // ✅ التحقق من الدور
+        $isDepartmentManager = ($role === 'مدير القسم');
+        $isSystemAdmin = ($role === 'مدير النظام');
+
+        if ($newStatus == 'approved') {
+            if ($isDepartmentManager) {
+                // مدير القسم يوافق مبدئياً
+                $leave->status = 'pending_admin';
+                $msg = 'تمت الموافقة المبدئية بنجاح.';
+                $notificationText = "وافق مدير القسم مبدئياً على إجازتك.";
+            } else {
+                // مدير النظام يوافق نهائياً
+                $leave->status = 'approved';
+                $msg = 'تم الاعتماد النهائي ✅';
+                $notificationText = "تمت الموافقة النهائية على طلب إجازتك.";
+            }
+            $leave->save();
+
+            if ($employee && $employee->user_id) {
+                Notification::create([
+                    'user_id'         => $employee->user_id,
+                    'notifiable_id'   => $employee->user_id,
+                    'notifiable_type' => 'App\Models\User',
+                    'title'           => 'تحديث إجازة 📅',
+                    'text'            => $notificationText,
+                    'type'            => 'success',
+                    'source'          => 'نظام الإجازات',
+                ]);
+            }
+
+            return back()->with('success', $msg);
+        }
+
+        // حالة الرفض
+        if ($newStatus == 'rejected') {
+            $newEntry = "🚫 رفض (" . ($isDepartmentManager ? 'مبدئي' : 'نهائي') . " - " . $role . "): " . $request->reject_reason;
+            $combinedReason = $newEntry . " [!] " . $currentReason;
+
+            if ($isDepartmentManager) {
+                // مدير القسم يرفض مبدئياً فقط
+                $leave->status = 'rejected_by_dept';
+                $msg = 'تم الرفض المبدئي بنجاح، بانتظار اعتماد مدير النظام.';
+                $notificationText = "رفض رئيس القسم طلبك مبدئياً، بانتظار اعتماد مدير النظام.";
+            } else {
+                // مدير النظام يرفض نهائياً
+                $leave->status = 'rejected';
+                $msg = 'تم اعتماد الرفض النهائي للطلب ❌';
+                $notificationText = "تم اعتماد رفض طلب إجازتك نهائياً.";
+            }
+            $leave->reason = $combinedReason;
+            $leave->save();
+
+            if ($employee && $employee->user_id) {
+                Notification::create([
+                    'user_id'         => $employee->user_id,
+                    'notifiable_id'   => $employee->user_id,
+                    'notifiable_type' => 'App\Models\User',
+                    'title'           => 'تحديث طلب إجازة ❌',
+                    'text'            => $notificationText,
+                    'type'            => 'important',
+                    'source'          => 'نظام الإجازات',
+                ]);
+            }
+
+            return back()->with('success', $msg);
+        }
+
+        return back()->with('error', 'حالة غير معروفة.');
+    }
 }

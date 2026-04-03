@@ -3,345 +3,389 @@
 @section('title', 'لوحة التحكم - HR System')
 
 @section('content')
-<style>
-    :root {
-        --bg-body: #f8f9fa;
-        --card-border: #eef0f2;
-        --text-dark: #333333;
-        --text-muted: #888888;
-        --accent-blue: #007bff;
-    }
+    <style>
+        .dashboard-wrapper {
+            background-color: #f8f9fa;
+            padding: 25px;
+            font-family: 'Cairo', sans-serif;
+            direction: rtl;
+        }
 
-    .dashboard-wrapper {
-        background-color: var(--bg-body);
-        padding: 30px;
-        font-family: 'Cairo', sans-serif;
-        direction: rtl;
-    }
+        /* كروت الإحصائيات الرئيسية */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
 
-    /* العناوين الرئيسية */
-    .main-section-title {
-        font-size: 20px;
-        font-weight: 700;
-        color: var(--text-dark);
-        margin-bottom: 20px;
-        text-align: right;
-    }
+        .stat-card {
+            background: #fff;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s;
+        }
 
-    /* كروت الإحصائيات - مطابقة للصورة */
-    .stats-row {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 15px;
-        margin-bottom: 30px;
-    }
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
 
-    .stat-card {
-        background: #fff;
-        border: 1px solid var(--card-border);
-        border-radius: 8px;
-        padding: 20px;
-        position: relative;
-        min-height: 120px;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-    }
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
 
-    .stat-icon-top {
-        position: absolute;
-        top: 15px;
-        right: 15px;
-        font-size: 18px;
-    }
+        .stat-title {
+            font-size: 14px;
+            color: #6c757d;
+            margin: 0;
+        }
 
-    .stat-main-info {
-        text-align: left;
-        margin-top: 10px;
-    }
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
 
-    .stat-label {
-        display: block;
-        font-size: 14px;
-        color: var(--text-dark);
-        font-weight: 600;
-        margin-bottom: 5px;
-        text-align: left;
-    }
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 5px;
+        }
 
-    .stat-num {
-        font-size: 32px;
-        font-weight: 700;
-        color: #000;
-    }
+        .stat-footer {
+            font-size: 12px;
+            color: #6c757d;
+        }
 
-    .stat-footer-text {
-        font-size: 12px;
-        color: var(--text-muted);
-        margin-top: auto;
-    }
+        /* شبكة المحتوى */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-bottom: 20px;
+        }
 
-    /* شبكة المحتوى الوسطى */
-    .content-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 20px;
-        margin-bottom: 30px;
-    }
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 20px;
+        }
 
-    .card {
-        background: #fff;
-        border: 1px solid var(--card-border);
-        border-radius: 8px;
-        padding: 20px;
-    }
+        .card {
+            background: #fff;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
 
-    .card-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 20px;
-    }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eef2f6;
+        }
 
-    .card-title-group h3 { font-size: 16px; margin: 0; color: #333; }
-    .card-title-group p { font-size: 12px; color: var(--text-muted); margin: 0; }
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1e293b;
+            margin: 0;
+        }
 
-    .btn-outline-sm {
-        border: 1px solid #ddd;
-        padding: 4px 12px;
-        border-radius: 15px;
-        font-size: 11px;
-        color: #666;
-        text-decoration: none;
-    }
+        .card-subtitle {
+            font-size: 12px;
+            color: #6c757d;
+            margin: 5px 0 0 0;
+        }
 
-    /* الجداول - مطابقة للصورة */
-    .custom-table {
-        width: 100%;
-        border-collapse: collapse;
-    }
+        .btn-link {
+            color: #4f46e5;
+            font-size: 12px;
+            text-decoration: none;
+        }
 
-    .custom-table th {
-        background: #f1f3f5;
-        padding: 10px;
-        font-size: 12px;
-        color: #666;
-        text-align: center;
-        border: 1px solid #eee;
-    }
+        .list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
 
-    .custom-table td {
-        padding: 12px;
-        font-size: 13px;
-        text-align: center;
-        border: 1px solid #eee;
-    }
+        .list-item:last-child {
+            border-bottom: none;
+        }
 
-    /* الحالات (Badge) - Rounded كما في الصورة */
-    .badge-pill {
-        padding: 2px 15px;
-        border-radius: 20px;
-        font-size: 12px;
-        border: 1px solid transparent;
-    }
-    .status-hader { background: #e6fffa; color: #38b2ac; border-color: #38b2ac50; }
-    .status-late { background: #fff5f5; color: #e53e3e; border-color: #e53e3e50; }
-    .status-pending { background: #fffaf0; color: #dd6b20; border-color: #dd6b2050; }
+        .item-name {
+            font-weight: 500;
+            color: #1e293b;
+        }
 
-    /* التايملاين (النشاطات) */
-    .activity-row {
-        display: flex;
-        align-items: center;
-        padding: 15px 0;
-        border-bottom: 1px solid #f8f9fa;
-    }
-    .activity-text { flex-grow: 1; font-size: 13px; margin: 0 10px; }
-    .activity-time { font-size: 11px; color: #bbb; }
+        .item-detail {
+            font-size: 12px;
+            color: #6c757d;
+        }
 
-    /* الشبكة السفلية - 3 أعمدة */
-    .bottom-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 20px;
-    }
+        .badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 500;
+        }
 
-    .list-item-minimal {
-        display: flex;
-        justify-content: space-between;
-        padding: 15px 0;
-        border-bottom: 1px solid #f8f9fa;
-    }
-    .item-label { font-size: 13px; color: #333; }
-    .item-sub { font-size: 11px; color: #999; }
-</style>
+        .badge-pending {
+            background: #fef3c7;
+            color: #d97706;
+        }
 
-<div class="dashboard-wrapper">
-    <h1 class="main-section-title">إحصائيات سريعة</h1>
+        .badge-approved {
+            background: #d1fae5;
+            color: #059669;
+        }
 
-    <div class="stats-row">
-        <div class="stat-card">
-            <span class="stat-icon-top">👥</span>
-            <div class="stat-main-info">
-                <span class="stat-label">إجمالي الموظفين</span>
-                <span class="stat-num">{{ $stats['total_employees'] }}</span>
+        .badge-active {
+            background: #d1fae5;
+            color: #059669;
+        }
+
+        .badge-inactive {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #4f46e5;
+            border-radius: 10px;
+        }
+    </style>
+
+    <div class="dashboard-wrapper">
+        {{-- 1. كروت الإحصائيات الرئيسية --}}
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-header">
+                    <h3 class="stat-title">إجمالي الموظفين</h3>
+                    <div class="stat-icon" style="background: #eef2ff; color: #4f46e5;">👥</div>
+                </div>
+                <div class="stat-value">{{ $stats['total_employees'] }}</div>
+                <div class="stat-footer">موظف نشط في الشركة</div>
             </div>
-            <p class="stat-footer-text">موظف نشط في الشركة</p>
+
+            <div class="stat-card">
+                <div class="stat-header">
+                    <h3 class="stat-title">الحضور اليوم</h3>
+                    <div class="stat-icon" style="background: #ecfdf5; color: #10b981;">🕒</div>
+                </div>
+                <div class="stat-value">{{ $stats['today_attendance'] }}</div>
+                <div class="stat-footer">
+                    نسبة الحضور:
+                    {{ $stats['total_employees'] > 0 ? round(($stats['today_attendance'] / $stats['total_employees']) * 100) : 0 }}%
+                    <div class="progress-bar">
+                        <div class="progress-fill"
+                            style="width: {{ $stats['total_employees'] > 0 ? ($stats['today_attendance'] / $stats['total_employees']) * 100 : 0 }}%">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-header">
+                    <h3 class="stat-title">طلبات الانتظار</h3>
+                    <div class="stat-icon" style="background: #fffbeb; color: #f59e0b;">📋</div>
+                </div>
+                <div class="stat-value">{{ $stats['pending_leaves'] + ($pendingLoanRequests ?? 0) }}</div>
+                <div class="stat-footer">
+                    إجازة: {{ $stats['pending_leaves'] }} | قروض: {{ $pendingLoanRequests ?? 0 }}
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-header">
+                    <h3 class="stat-title">إشعارات غير مقروءة</h3>
+                    <div class="stat-icon" style="background: #fef2f2; color: #ef4444;">🔔</div>
+                </div>
+                <div class="stat-value">{{ $stats['unread_notifications'] }}</div>
+                <div class="stat-footer">تنبيهات تحتاج إلى مراجعة</div>
+            </div>
         </div>
 
-        <div class="stat-card">
-            <span class="stat-icon-top">🕒</span>
-            <div class="stat-main-info">
-                <span class="stat-label">الحضور اليوم</span>
-                <span class="stat-num">{{ $stats['today_attendance'] }}</span>
+        {{-- 2. الصف العلوي: الطلبات العاجلة + الرواتب --}}
+        <div class="grid-2">
+            {{-- طلبات الإجازة المعلقة --}}
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h3 class="card-title">📅 طلبات الإجازة المعلقة</h3>
+                        <p class="card-subtitle">بحاجة إلى موافقتك</p>
+                    </div>
+                    <a href="{{ route('attendance') }}" class="btn-link">عرض الكل →</a>
+                </div>
+                @forelse($latestLeaves as $leave)
+                    <div class="list-item">
+                        <div>
+                            <div class="item-name">{{ $leave->employee->first_name }} {{ $leave->employee->last_name }}
+                            </div>
+                            <div class="item-detail">{{ $leave->leaveType->name ?? 'إجازة' }} • من
+                                {{ $leave->start_date }} إلى {{ $leave->end_date }}</div>
+                        </div>
+                        <span class="badge badge-pending">قيد المراجعة</span>
+                    </div>
+                @empty
+                    <div class="list-item">لا توجد طلبات إجازة معلقة</div>
+                @endforelse
             </div>
-            <p class="stat-footer-text">موظف مسجل حضورهم اليوم</p>
+
+            {{-- طلبات القروض المعلقة --}}
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h3 class="card-title">💰 طلبات القروض المعلقة</h3>
+                        <p class="card-subtitle">بحاجة إلى موافقتك</p>
+                    </div>
+                    <a href="{{ route('attendance') }}" class="btn-link">عرض الكل →</a>
+                </div>
+                @forelse($pendingLoans ?? [] as $loan)
+                    <div class="list-item">
+                        <div>
+                            <div class="item-name">{{ $loan->employee->first_name }} {{ $loan->employee->last_name }}
+                            </div>
+                            <div class="item-detail">{{ number_format($loan->amount, 2) }} ريال • {{ $loan->months }} شهر
+                            </div>
+                        </div>
+                        <span class="badge badge-pending">قيد المراجعة</span>
+                    </div>
+                @empty
+                    <div class="list-item">لا توجد طلبات قروض معلقة</div>
+                @endforelse
+            </div>
         </div>
 
-        <div class="stat-card">
-            <span class="stat-icon-top">📅</span>
-            <div class="stat-main-info">
-                <span class="stat-label">طلبات الإجازة المعلقة</span>
-                <span class="stat-num">{{ $stats['pending_leaves'] }}</span>
+        {{-- 3. الصف الأوسط: الموظفون الجدد + المنفصلون + الرواتب --}}
+        <div class="grid-3">
+            {{-- أحدث الموظفين --}}
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h3 class="card-title">✨ أحدث الموظفين</h3>
+                        <p class="card-subtitle">آخر 5 موظفين تم تعيينهم</p>
+                    </div>
+                    <a href="{{ route('employees.index') }}" class="btn-link">عرض الكل →</a>
+                </div>
+                @forelse($recentEmployees ?? [] as $emp)
+                    <div class="list-item">
+                        <div>
+                            <div class="item-name">{{ $emp->first_name }} {{ $emp->last_name }}</div>
+                            <div class="item-detail">{{ $emp->department->name ?? 'بدون قسم' }} •
+                                {{ $emp->jobTitle->name ?? '' }}</div>
+                        </div>
+                        <span class="badge badge-active">نشط</span>
+                    </div>
+                @empty
+                    <div class="list-item">لا يوجد موظفين جدد</div>
+                @endforelse
             </div>
-            <p class="stat-footer-text">في انتظار اعتماد الموارد البشرية</p>
+
+            {{-- الموظفون المنفصلون --}}
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h3 class="card-title">⚠️ آخر المنفصلين</h3>
+                        <p class="card-subtitle">آخر 5 موظفين تم فصلهم</p>
+                    </div>
+                    <a href="{{ route('employees.index') }}" class="btn-link">عرض الكل →</a>
+                </div>
+                @forelse($inactiveEmployees ?? [] as $emp)
+                    <div class="list-item">
+                        <div>
+                            <div class="item-name">{{ $emp->first_name }} {{ $emp->last_name }}</div>
+                            <div class="item-detail">{{ $emp->department->name ?? 'بدون قسم' }}</div>
+                        </div>
+                        <span class="badge badge-inactive">منفصل</span>
+                    </div>
+                @empty
+                    <div class="list-item">لا يوجد موظفين منفصلين</div>
+                @endforelse
+            </div>
+
+            {{-- حالة الرواتب --}}
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h3 class="card-title">💰 حالة الرواتب</h3>
+                        <p class="card-subtitle">شهر {{ now()->translatedFormat('F Y') }}</p>
+                    </div>
+                    <a href="{{ route('salaries') }}" class="btn-link">إدارة →</a>
+                </div>
+                @php
+                    $currentMonth = now()->format('Y-m');
+                    $totalSalaries = \App\Models\Salary::where('month', $currentMonth)->count();
+                    $paidSalaries = \App\Models\Salary::where('month', $currentMonth)
+                        ->where('status', 'مدفوع')
+                        ->count();
+                    $totalAmount = \App\Models\Salary::where('month', $currentMonth)->sum('net_salary');
+                @endphp
+                <div class="list-item">
+                    <div>
+                        <div class="item-name">الموظفين</div>
+                        <div class="item-detail">{{ $paidSalaries }} / {{ $totalSalaries }} مدفوع</div>
+                    </div>
+                    <span
+                        class="badge {{ $paidSalaries == $totalSalaries && $totalSalaries > 0 ? 'badge-active' : 'badge-pending' }}">
+                        {{ $paidSalaries == $totalSalaries && $totalSalaries > 0 ? 'مكتمل' : 'قيد التنفيذ' }}
+                    </span>
+                </div>
+                <div class="list-item" style="border-bottom: none;">
+                    <div>
+                        <div class="item-name">إجمالي المستحق</div>
+                        <div class="item-detail">{{ number_format($totalAmount, 2) }} ريال</div>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <div class="stat-card">
-            <span class="stat-icon-top">🔔</span>
-            <div class="stat-main-info">
-                <span class="stat-label">إشعارات النظام</span>
-                <span class="stat-num">{{ $stats['unread_notifications'] }}</span>
-            </div>
-            <p class="stat-footer-text">تنبيهات تحتاج إلى مراجعة</p>
-        </div>
-    </div>
-
-    <div class="content-grid">
+        {{-- 4. النشاطات الأخيرة --}}
         <div class="card">
             <div class="card-header">
-                <div class="card-title-group">
-                    <h3>الحضور اليوم</h3>
-                    <p>سجل الحضور والانصراف لليوم الحالي</p>
-                </div>
-                <a href="{{ route('attendance.index') }}" class="btn-outline-sm">عرض الكل</a>
-            </div>
-            <table class="custom-table">
-                <thead>
-                    <tr>
-                        <th>الموظف</th>
-                        <th>القسم</th>
-                        <th>وقت الدخول</th>
-                        <th>وقت الخروج</th>
-                        <th>الحالة</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($todayAttendance as $record)
-                    <tr>
-                        <td>{{ $record->employee->first_name }} {{ $record->employee->last_name }}</td>
-                        <td>{{ $record->employee->department ?? 'تطوير البرمجيات' }}</td>
-                        <td>{{ \Carbon\Carbon::parse($record->check_in)->format('h:i ص') }}</td>
-                        <td>—</td>
-                        <td>
-                            <span class="badge-pill {{ $record->status == 'late' ? 'status-late' : 'status-hader' }}">
-                                {{ $record->status == 'late' ? 'متأخر' : 'حاضر' }}
-                            </span>
-                        </td>
-                    </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-
-        <div class="card">
-            <div class="card-header">
-                <div class="card-title-group">
-                    <h3>آخر نشاطات النظام</h3>
-                    <p>سجل العمليات الأخيرة في النظام</p>
-                </div>
-                <a href="#" class="btn-outline-sm">عرض السجل الكامل</a>
-            </div>
-            <div class="activities-container">
-                @foreach($activities as $activity)
-                <div class="activity-row">
-                    <span style="font-size: 14px;">✅</span>
-                    <p class="activity-text">{!! $activity->description !!}</p>
-                    <span class="activity-time">{{ $activity->created_at->diffForHumans() }}</span>
-                </div>
-                @endforeach
-            </div>
-        </div>
-    </div>
-
-    <div class="bottom-grid">
-        <div class="card">
-            <div class="card-header">
-                <div class="card-title-group">
-                    <h3>أحدث طلبات الإجازة</h3>
-                    <p>متابعة حالة طلبات الإجازة الجديدة</p>
-                </div>
-                <a href="{{ route('leaves.index') }}" class="btn-outline-sm">كل الطلبات</a>
-            </div>
-            @foreach($latestLeaves as $leave)
-            <div class="list-item-minimal">
                 <div>
-                    <span class="item-label">{{ $leave->employee->first_name }}</span><br>
-                    <span class="item-sub">{{ $leave->leaveType->name }} • {{ \Carbon\Carbon::parse($leave->start_date)->format('d M') }}</span>
+                    <h3 class="card-title">📋 آخر نشاطات النظام</h3>
+                    <p class="card-subtitle">أحدث العمليات التي تمت في النظام</p>
                 </div>
-                <span class="badge-pill {{ $leave->status == 'pending' ? 'status-pending' : 'status-hader' }}">
-                    {{ $leave->status == 'pending' ? 'قيد المراجعة' : 'معتمدة' }}
-                </span>
+                @if (auth()->user()->role?->name === 'مدير النظام')
+                    <a href="{{ route('activity.log') }}" class="btn-link">عرض السجل الكامل →</a>
+                @endif
+               
             </div>
+            @foreach ($activities as $activity)
+                <div class="list-item">
+                    <div>
+                        <div class="item-name">{!! $activity->description !!}</div>
+                        <div class="item-detail">{{ $activity->created_at->diffForHumans() }}</div>
+                    </div>
+                    <span style="font-size: 20px;">✅</span>
+                </div>
             @endforeach
         </div>
-
-        <div class="card">
-            <div class="card-header">
-                <div class="card-title-group">
-                    <h3>تنبيهات الرواتب</h3>
-                    <p>متابعة حالة كشوف الرواتب الحالية</p>
-                </div>
-                <a href="#" class="btn-outline-sm">إدارة الرواتب</a>
-            </div>
-            <div class="list-item-minimal">
-                <div>
-                    <span class="item-label">رواتب شهر نوفمبر 2025</span><br>
-                    <span class="item-sub">تم دفع رواتب جميع الموظفين</span>
-                </div>
-                <span class="badge-pill status-hader">مدفوعة</span>
-            </div>
-            <div class="list-item-minimal" style="border: none;">
-                <div>
-                    <span class="item-label">رواتب شهر ديسمبر 2025</span><br>
-                    <span class="item-sub">لم يتم اعتماد الكشوف النهائية بعد</span>
-                </div>
-                <span class="badge-pill status-pending">قيد التجهيز</span>
-            </div>
-        </div>
-
-        <div class="card">
-            <div class="card-header">
-                <div class="card-title-group">
-                    <h3>مهام الموارد البشرية اليوم</h3>
-                    <p>قائمة بالمهام التي يفضل إنجازها اليوم</p>
-                </div>
-                <a href="#" class="btn-outline-sm">إدارة المهام</a>
-            </div>
-            <div class="list-item-minimal">
-                <div style="display: flex; gap: 10px; align-items: center;">
-                    <input type="checkbox">
-                    <span class="item-label">مراجعة طلبات الإجازة المعلقة</span>
-                </div>
-                <span class="status-late" style="font-size: 10px; padding: 2px 8px; border-radius: 10px;">أولوية عالية</span>
-            </div>
-            <div class="list-item-minimal">
-                <div style="display: flex; gap: 10px; align-items: center;">
-                    <input type="checkbox">
-                    <span class="item-label">تحديث بيانات الموظفين الجدد</span>
-                </div>
-                <span class="status-pending" style="font-size: 10px; padding: 2px 8px; border-radius: 10px;">أولوية متوسطة</span>
-            </div>
-        </div>
     </div>
-</div>
 @endsection

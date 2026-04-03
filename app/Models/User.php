@@ -41,13 +41,14 @@ class User extends Authenticatable
 
     // ربط النموذج بجدول users
     protected $table = 'users';
-
     protected $fillable = [
         'name',
         'email',
         'password',
         'role_id',
         'is_active',
+        'status',
+        'must_change_password',
     ];
 
     protected $hidden = [
@@ -55,13 +56,13 @@ class User extends Authenticatable
         'remember_token',
     ];
     // لا تنسى التأكد من وجود العلاقة في الأعلى
-public function role()
-{
-    // المستخدم ينتمي إلى دور واحد (BelongsTo)
-   return $this->belongsTo(Role::class, 'role_id');
-}
-public function employee()
-{
-    return $this->hasOne(\App\Models\Employee::class);
-}
+    public function role()
+    {
+        // المستخدم ينتمي إلى دور واحد (BelongsTo)
+        return $this->belongsTo(Role::class, 'role_id');
+    }
+    public function employee()
+    {
+        return $this->hasOne(\App\Models\Employee::class);
+    }
 }

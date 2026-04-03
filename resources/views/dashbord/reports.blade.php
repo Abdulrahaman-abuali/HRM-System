@@ -23,6 +23,15 @@
                             <input type="hidden" name="module" value="attendance">
                             <input type="hidden" name="from_date" value="{{ date('Y-m-01') }}">
                             <input type="hidden" name="to_date" value="{{ date('Y-m-t') }}">
+
+                            {{-- إضافة فلتر القسم --}}
+                            <select name="department_id" class="form-control" style="margin-top: 10px; font-size: 12px;">
+                                <option value="">كل الأقسام</option>
+                                @foreach(\App\Models\Department::all() as $dept)
+                                    <option value="{{ $dept->id }}">{{ $dept->name }}</option>
+                                @endforeach
+                            </select>
+
                             <button type="submit" class="btn btn-primary w-full" style="margin-top: 15px; background: #4f46e5;">توليد الآن</button>
                         </form>
                     </div>
@@ -33,12 +42,21 @@
                     <div class="card-body">
                         <div class="stat-icon" style="background: #ecfdf5; color: #10b981; margin-bottom: 15px;">💰</div>
                         <h3 class="card-title">الرواتب الشهرية</h3>
-                        <p class="card-subtitle">ملخص الرواتب والبدلات المعتمدة لجميع الأقسام</p>
+                        <p class="card-subtitle">ملخص الرواتب والبدلات (نفس شاشة الرواتب)</p>
                         <form action="{{ route('reports.generate') }}" method="POST" target="_blank">
                             @csrf
                             <input type="hidden" name="module" value="payroll">
                             <input type="hidden" name="from_date" value="{{ date('Y-m-01') }}">
                             <input type="hidden" name="to_date" value="{{ date('Y-m-t') }}">
+
+                            {{-- إضافة فلتر القسم --}}
+                            <select name="department_id" class="form-control" style="margin-top: 10px; font-size: 12px;">
+                                <option value="">كل الأقسام</option>
+                                @foreach(\App\Models\Department::all() as $dept)
+                                    <option value="{{ $dept->id }}">{{ $dept->name }}</option>
+                                @endforeach
+                            </select>
+
                             <button type="submit" class="btn btn-primary w-full" style="margin-top: 15px; background: #10b981;">توليد الآن</button>
                         </form>
                     </div>
@@ -55,6 +73,15 @@
                             <input type="hidden" name="module" value="employees">
                             <input type="hidden" name="from_date" value="{{ date('Y-01-01') }}">
                             <input type="hidden" name="to_date" value="{{ date('Y-12-31') }}">
+
+                            {{-- إضافة فلتر القسم --}}
+                            <select name="department_id" class="form-control" style="margin-top: 10px; font-size: 12px;">
+                                <option value="">كل الأقسام</option>
+                                @foreach(\App\Models\Department::all() as $dept)
+                                    <option value="{{ $dept->id }}">{{ $dept->name }}</option>
+                                @endforeach
+                            </select>
+
                             <button type="submit" class="btn btn-primary w-full" style="margin-top: 15px; background: #f59e0b;">توليد الآن</button>
                         </form>
                     </div>
@@ -105,7 +132,7 @@
                                 <label class="form-label">نوع الكشف</label>
                                 <select name="report_type" class="form-control" required>
                                     <option value="personal">📄 كشف بيانات شخصية</option>
-                                    <option value="financial">💰 كشف مالي (رواتب)</option>
+                                    <option value="financial">💰 كشف مالي (نفس الرواتب)</option>
                                 </select>
                             </div>
                             {{-- من تاريخ --}}
@@ -132,7 +159,7 @@
             <article class="card">
                 <header class="card-header" style="border-bottom: 1px solid #f1f5f9; padding: 20px;">
                     <h2 class="card-title">📋 كشف تقرير عام مخصص</h2>
-                    <p class="card-subtitle">استخراج بيانات الوحدات لفترة زمنية محددة</p>
+                    <p class="card-subtitle">استخراج بيانات الوحدات لفترة زمنية محددة مع اختيار القسم</p>
                 </header>
                 <form action="{{ route('reports.generate') }}" method="POST" target="_blank">
                     @csrf
@@ -144,8 +171,18 @@
                                     <option value="">-- اختر الوحدة --</option>
                                     <option value="employees">بيانات الموظفين</option>
                                     <option value="attendance">الحضور والانصراف</option>
-                                    <option value="payroll">الرواتب والمالية</option>
+                                    <option value="payroll">الرواتب والمالية (شاشة الرواتب)</option>
                                     <option value="annual_summary">ملخص سنوي</option>
+                                </select>
+                            </div>
+                            {{-- حقل القسم المخصص --}}
+                            <div class="form-group">
+                                <label class="form-label">القسم</label>
+                                <select name="department_id" class="form-control">
+                                    <option value="">جميع الأقسام</option>
+                                    @foreach(\App\Models\Department::all() as $dept)
+                                        <option value="{{ $dept->id }}">{{ $dept->name }}</option>
+                                    @endforeach
                                 </select>
                             </div>
                             <div class="form-group">

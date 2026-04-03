@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "c47d2cfdb474b0f5e8c0435147ee9c9d",
+    "content-hash": "c7aaf0a1a109f35133bd55d620fbdb2d",
     "packages": [
         {
             "name": "barryvdh/laravel-dompdf",
@@ -367,6 +367,80 @@
                 }
             ],
             "time": "2025-08-20T19:15:30+00:00"
+        },
+        {
+            "name": "devrabiul/laravel-pwa-kit",
+            "version": "v1.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/devrabiul/laravel-pwa-kit.git",
+                "reference": "35937601e6d4fe4eeeb0bb94b29c6819898095ea"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/devrabiul/laravel-pwa-kit/zipball/35937601e6d4fe4eeeb0bb94b29c6819898095ea",
+                "reference": "35937601e6d4fe4eeeb0bb94b29c6819898095ea",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=8.0"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "aliases": {
+                        "PwaKit": "Devrabiul\\PwaKit\\Facades\\PwaKit"
+                    },
+                    "providers": [
+                        "Devrabiul\\PwaKit\\PwaKitServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Devrabiul\\PwaKit\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Muhammad Rabiul",
+                    "email": "devrabiul@gmail.com",
+                    "homepage": "https://rixetbd.com",
+                    "role": "Software Engineer"
+                }
+            ],
+            "description": "Laravel PWA Kit is a lightweight and flexible package to add Progressive Web App (PWA) support to your Laravel applications with ease.",
+            "homepage": "https://github.com/devrabiul/laravel-pwa-kit",
+            "keywords": [
+                "laravel",
+                "laravel-pwa",
+                "manifest",
+                "offline",
+                "progressive-web-app",
+                "pwa",
+                "pwa-kit",
+                "service-worker",
+                "web-app"
+            ],
+            "support": {
+                "issues": "https://github.com/devrabiul/laravel-pwa-kit/issues",
+                "source": "https://github.com/devrabiul/laravel-pwa-kit/tree/v1.1"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/devrabiul",
+                    "type": "github"
+                },
+                {
+                    "url": "https://ko-fi.com/devrabiul",
+                    "type": "ko_fi"
+                }
+            ],
+            "time": "2025-09-11T19:13:23+00:00"
         },
         {
             "name": "dflydev/dot-access-data",

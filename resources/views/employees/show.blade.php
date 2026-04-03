@@ -1,129 +1,162 @@
 @extends('layout.app')
 
 @section('title')
-تفاصيل الموظق
+    تفاصيل الموظف
 @endsection
 
 @section('content')
- <main class="main-content">
+    <main class="main-content">
 
-                <section class="section">
-                    <article class="card employee-profile">
-                        <!-- هيدر الملف الشخصي -->
-                        <header class="employee-header">
-                            <div class="employee-header-main">
-                                <div class="employee-avatar">م</div>
-                                <div class="employee-basic-info">
-                                    <h2 class="employee-name">{{ $employee->first_name}} {{ $employee->last_name }}</h2>
-                                    <p class="employee-position">
-                                        {{ $employee->jobTitle->name }} - {{ $employee->department->name }}
-                                    </p>
-                                    <p class="employee-id">
-                                        رقم الموظف: <span class="employee-id-value">{{ $employee->id }}</span>
-                                    </p>
-                                </div>
+        <section class="section">
+            <article class="card employee-profile">
+                <!-- هيدر الملف الشخصي -->
+                <header class="employee-header">
+                    <div class="employee-header-main">
+                        <div class="employee-avatar">م</div>
+                        <div class="employee-basic-info">
+                            <h2 class="employee-name">{{ $employee->first_name }} {{ $employee->last_name }}</h2>
+                            <p class="employee-position">
+                                {{ $employee->jobTitle->name }} - {{ $employee->department->name }}
+                            </p>
+                            <p class="employee-id">
+                                رقم الموظف: <span class="employee-id-value">{{ $employee->id }}</span>
+                            </p>
+                        </div>
+                    </div>
+                    <div class="employee-header-meta">
+                        @if ($employee->status == 1)
+                            <div class="employee-status">
+                                <span class="badge badge-success">
+                                    نشط
+                                </span>
                             </div>
-                            <div class="employee-header-meta">
-                                @if ($employee->status==1)
-                                            <div class="employee-status">
-                                    <span class="badge badge-success">
-                                        نشط
-                                    </span>
-                                </div>
-
-                                        @else
-                                        <div class="employee-status">
-                                    <span class="badge badge-danger">
-                                        موقف
-                                    </span>
-                                </div>
-
-                                        @endif
-
-                                <div class="employee-dates">
-                                    <span class="employee-date-label">تاريخ التعيين:</span>
-                                    <span class="employee-date-value">{{ $employee->hire_date }}</span>
-                                </div>
+                        @else
+                            <div class="employee-status">
+                                <span class="badge badge-danger">
+                                    موقف
+                                </span>
                             </div>
+                        @endif
+
+                        <div class="employee-dates">
+                            <span class="employee-date-label">تاريخ التعيين:</span>
+                            <span class="employee-date-value">{{ $employee->hire_date }}</span>
+                        </div>
+                    </div>
+                </header>
+
+                <!-- شبكة المعلومات -->
+                <div class="employee-info-grid">
+
+                    <!-- معلومات شخصية -->
+                    <section class="info-section">
+                        <header class="info-section-header">
+                            <h3 class="info-section-title">المعلومات الشخصية</h3>
                         </header>
+                        <div class="info-section-body">
+                            <div class="info-row">
+                                <span class="info-label">الاسم الكامل:</span>
+                                <span class="info-value">{{ $employee->first_name }} {{ $employee->last_name }}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">البريد الإلكتروني:</span>
+                                <span class="info-value">{{ $employee->email }}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">رقم الجوال:</span>
+                                <span class="info-value">+967 {{ $employee->phone }}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">العنوان:</span>
+                                <span class="info-value">{{ $employee->address }}</span>
+                            </div>
+                        </div>
+                    </section>
 
-                        <!-- شبكة المعلومات -->
-                        <div class="employee-info-grid">
+                    <!-- معلومات وظيفية -->
+                    <section class="info-section">
+                        <header class="info-section-header">
+                            <h3 class="info-section-title">المعلومات الوظيفية</h3>
+                        </header>
+                        <div class="info-section-body">
+                            <div class="info-row">
+                                <span class="info-label">القسم:</span>
+                                <span class="info-value">{{ $employee->department->name }}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">المسمى الوظيفي:</span>
+                                <span class="info-value">{{ $employee->jobTitle->name }}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">مدير مباشر:</span>
+                                <span class="info-value">{{ $employee->manager->first_name ?? 'لا يوجد مدير مباشر' }}
+                                    {{ $employee->manager->last_name ?? '' }}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">نوع التوظيف:</span>
+                                <span class="info-value">{{ $employee->employment_type }}</span>
+                            </div>
+                        </div>
+                    </section>
+                    <!-- معلومات مالية -->
+                    <section class="info-section">
+                        <header class="info-section-header">
+                            <h3 class="info-section-title">المعلومات المالية</h3>
+                        </header>
+                        <div class="info-section-body">
+                            @php
+                                $basic = $employee->basic_salary ?? 0;
+                                $housingPercent = $employee->housing_percentage ?? 10;
+                                $transportPercent = $employee->transport_percentage ?? 5;
 
-                            <!-- معلومات شخصية -->
-                            <section class="info-section">
-                                <header class="info-section-header">
-                                    <h3 class="info-section-title">المعلومات الشخصية</h3>
-                                </header>
-                                <div class="info-section-body">
-                                    <div class="info-row">
-                                        <span class="info-label">الاسم الكامل:</span>
-                                        <span class="info-value">{{ $employee->first_name}} {{ $employee->last_name }}</span>
-                                    </div>
-                                    <div class="info-row">
-                                        <span class="info-label">البريد الإلكتروني:</span>
-                                        <span class="info-value">{{ $employee->email }}</span>
-                                    </div>
-                                    <div class="info-row">
-                                        <span class="info-label">رقم الجوال:</span>
-                                        <span class="info-value">+967 {{ $employee->phone }}</span>
-                                    </div>
-                                    <div class="info-row">
-                                        <span class="info-label">العنوان:</span>
-                                        <span class="info-value">صنعاء - حي الجامعة - شارع النصر</span>
-                                    </div>
-                                </div>
-                            </section>
+                                $housingAmount = $basic * ($housingPercent / 100);
+                                $transportAmount = $basic * ($transportPercent / 100);
+                                $totalAllowances = $housingAmount + $transportAmount;
 
-                            <!-- معلومات وظيفية -->
-                            <section class="info-section">
-                                <header class="info-section-header">
-                                    <h3 class="info-section-title">المعلومات الوظيفية</h3>
-                                </header>
-                                <div class="info-section-body">
-                                    <div class="info-row">
-                                        <span class="info-label">القسم:</span>
-                                        <span class="info-value">{{ $employee->department->name }}</span>
-                                    </div>
-                                    <div class="info-row">
-                                        <span class="info-label">المسمى الوظيفي:</span>
-                                        <span class="info-value">{{ $employee->jobTitle->name }}</span>
-                                    </div>
-                                    <div class="info-row">
-                                        <span class="info-label">مدير مباشر:</span>
-                                        <span class="info-value">{{ $employee->manager->first_name ?? 'لا يوجد مدير مباشر' }} {{ $employee->manager->last_name ?? '' }}</span>
-                                    </div>
-                                    <div class="info-row">
-                                        <span class="info-label">نوع التوظيف:</span>
-                                        <span class="info-value">{{ $employee->employment_type }}</span>
-                                    </div>
-                                </div>
-                            </section>
+                                $socialInsurance = $basic * 0.06;
+                                // ملاحظة: الضريبة تحتاج دالة، سنستخدم قيمة تقريبية هنا
+                                $incomeTax = 0;
+                                if ($basic * 12 > 120000) {
+                                    $incomeTax = $basic * 12 > 240000 ? $basic * 0.13 : $basic * 0.1;
+                                }
+                                $totalDeductions = $socialInsurance + $incomeTax;
 
-                            <!-- معلومات مالية -->
-                            <section class="info-section">
-                                <header class="info-section-header">
-                                    <h3 class="info-section-title">المعلومات المالية</h3>
-                                </header>
-                                <div class="info-section-body">
-                                    <div class="info-row">
-                                        <span class="info-label">الراتب الأساسي:</span>
-                                        <span class="info-value">{{ $employee->salaries->last()->basic_salary ?? 0 }} ريال</span>
-                                    </div>
-                                    <div class="info-row">
-                                        <span class="info-label">البدلات:</span>
-                                        <span class="info-value">50,000 ريال</span>
-                                    </div>
-                                    <div class="info-row">
-                                        <span class="info-label">الخصومات الدورية:</span>
-                                        <span class="info-value">10,000 ريال</span>
-                                    </div>
-                                    <div class="info-row">
-                                        <span class="info-label">صافي الراتب:</span>
-                                        <span class="info-value info-value-strong">440,000 ريال</span>
-                                    </div>
-                                </div>
-                            </section>
+                                $netSalary = $basic + $totalAllowances - $totalDeductions;
+                            @endphp
+                            <div class="info-row">
+                                <span class="info-label">الراتب الأساسي:</span>
+                                <span class="info-value">{{ number_format($basic, 2) }} ريال</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">بدل السكن ({{ $housingPercent }}%):</span>
+                                <span class="info-value">{{ number_format($housingAmount, 2) }} ريال</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">بدل المواصلات ({{ $transportPercent }}%):</span>
+                                <span class="info-value">{{ number_format($transportAmount, 2) }} ريال</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">إجمالي البدلات:</span>
+                                <span class="info-value">{{ number_format($totalAllowances, 2) }} ريال</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">التأمينات الاجتماعية (6%):</span>
+                                <span class="info-value">{{ number_format($socialInsurance, 2) }} ريال</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">ضريبة الدخل:</span>
+                                <span class="info-value">{{ number_format($incomeTax, 2) }} ريال</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">إجمالي الخصومات:</span>
+                                <span class="info-value">{{ number_format($totalDeductions, 2) }} ريال</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">صافي الراتب:</span>
+                                <span class="info-value info-value-strong">{{ number_format($netSalary, 2) }} ريال</span>
+                            </div>
+                        </div>
+                    </section>
 
                             <!-- إحصائيات الحضور -->
                             <section class="info-section">
@@ -174,5 +207,5 @@
                     </article>
                 </section>
 
-            </main>
+    </main>
 @endsection
