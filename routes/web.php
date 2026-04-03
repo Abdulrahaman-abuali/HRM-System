@@ -11,6 +11,7 @@ use App\Http\Controllers\ReportsController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\FaceAttendanceController;
+use App\Http\Controllers\EmployeeEvaluationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -89,6 +90,9 @@ Route::middleware(['auth'])->group(function () {
 
         // أدوات الربط الديناميكي
         Route::get('/get-managers/{departmentId}', [EmployeeController::class, 'getManagers']);
+
+        // تقييم الموظف عبر الذكاء الاصطناعي
+        Route::get('/employees/{id}/evaluation', [EmployeeEvaluationController::class, 'evaluate'])->name('employees.evaluation');
     });
 
     /*

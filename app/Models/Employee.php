@@ -148,4 +148,20 @@ class Employee extends Model
         // العلاقة هي One-to-One (واحد لواحد)
         return $this->hasOne(Salary::class, 'employee_id');
     }
+
+    /**
+     * جلب جميع المهام الخاصة بالموظف
+     */
+    public function tasks()
+    {
+        return $this->hasMany(Task::class);
+    }
+
+    /**
+     * جلب كافة تقييمات الأداء الخاصة بالموظف
+     */
+    public function performanceReviews()
+    {
+        return $this->hasMany(PerformanceReview::class);
+    }
 }

@@ -163,9 +163,9 @@
                             <button type="button" class="btn btn-outline">
                                 عرض طلبات الإجازة
                             </button>
-                            <button type="button" class="btn btn-outline">
-                                عرض تقييمات الأداء
-                            </button>
+                            <a href="{{ route('employees.evaluation', $employee->id) }}" class="btn btn-outline">
+                                التقييم بالذكاء الاصطناعي (AI)
+                            </a>
                             <button type="button" class="btn btn-danger">
                                 إيقاف الموظف
                             </button>
