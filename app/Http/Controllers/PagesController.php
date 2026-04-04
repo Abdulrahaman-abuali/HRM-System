@@ -452,9 +452,61 @@ class PagesController extends Controller
 
         return view('dashbord.salaries', compact('employees', 'stats', 'date', 'search', 'departments'));
     }
-    public function showPerformancePage()
+    public function showPerformancePage(Request $request)
     {
-        return view('dashbord.performance');
+        $departmentFilter = $request->input('department');
+        $nameFilter = $request->input('name');
+        $ratingFilter = $request->input('rating');
+
+        $query = \App\Models\Employee::with(['department', 'tasks', 'attendanceRecords', 'performanceReviews']);
+
+        if ($departmentFilter) {
+            $query->where('department_id', $departmentFilter);
+        }
+
+        if ($nameFilter) {
+            $query->where(function ($q) use ($nameFilter) {
+                $q->where('first_name', 'like', "%{$nameFilter}%")
+                  ->orWhere('last_name', 'like', "%{$nameFilter}%");
+            });
+        }
+
+        $employees = $query->paginate(10);
+        
+        $aiService = new \App\Services\AIEvaluationService();
+        $evaluatedEmployees = collect();
+        
+        $stats = [
+            'excellent' => 0,
+            'very_good' => 0,
+            'acceptable' => 0,
+            'weak' => 0,
+        ];
+
+        foreach ($employees as $emp) {
+            $eval = $aiService->evaluateEmployee($emp, false);
+            
+            if ($eval['rating_class'] === 'excellent') $stats['excellent']++;
+            elseif ($eval['rating_class'] === 'very-good') $stats['very_good']++;
+            elseif ($eval['rating_class'] === 'acceptable') $stats['acceptable']++;
+            elseif ($eval['rating_class'] === 'weak') $stats['weak']++;
+
+            $emp->setAttribute('ai_evaluation', $eval);
+            $evaluatedEmployees->push($emp);
+        }
+
+        if ($ratingFilter) {
+            $evaluatedEmployees = $evaluatedEmployees->filter(function($emp) use ($ratingFilter) {
+                return $emp->ai_evaluation['rating_class'] === $ratingFilter;
+            });
+        }
+
+        $departments = \App\Models\Department::all();
+
+        return view('dashbord.performance', compact(
+            'employees', 'evaluatedEmployees', 'stats', 'departments', 
+            'departmentFilter', 'nameFilter', 'ratingFilter'
+        ));
     }
     public function showReportsPage()
     {

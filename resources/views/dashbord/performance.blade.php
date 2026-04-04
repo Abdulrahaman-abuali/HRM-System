@@ -1,7 +1,7 @@
 @extends('layout.app')
 
 @section('title')
-    تقييم الاداء
+    تقييم الأداء
 @endsection
 
 @section('content')
@@ -9,9 +9,9 @@
             <!-- الهيدر العلوي -->
             <header class="main-header">
                 <div class="header-left">
-                    <h1 class="page-title">تقييم الأداء</h1>
+                    <h1 class="page-title">تقييم الأداء (بالذكاء الاصطناعي)</h1>
                     <p class="page-subtitle">
-                        متابعة تقييم أداء الموظفين حسب الفترات والأقسام
+                        متابعة تقييم أداء الموظفين وتحليل إنتاجيتهم ديناميكياً
                     </p>
                 </div>
                 <div class="header-right">
@@ -31,7 +31,7 @@
                 <!-- ملخص التقييمات -->
                 <section class="section">
                     <div class="section-header">
-                        <h2 class="section-title">ملخص تقييمات الأداء</h2>
+                        <h2 class="section-title">ملخص تقييمات الأداء الحالية للصفحة</h2>
                     </div>
                     <div class="grid grid-4">
                         <article class="card stat-card">
@@ -40,7 +40,7 @@
                                 <span class="stat-icon stat-icon-success">★</span>
                             </div>
                             <div class="stat-card-body">
-                                <p class="stat-value">8</p>
+                                <p class="stat-value">{{ $stats['excellent'] }}</p>
                                 <p class="stat-caption">موظفون بتقييم ممتاز</p>
                             </div>
                         </article>
@@ -51,7 +51,7 @@
                                 <span class="stat-icon stat-icon-primary">☆</span>
                             </div>
                             <div class="stat-card-body">
-                                <p class="stat-value">15</p>
+                                <p class="stat-value">{{ $stats['very_good'] }}</p>
                                 <p class="stat-caption">موظفون بتقييم جيد جداً</p>
                             </div>
                         </article>
@@ -62,7 +62,7 @@
                                 <span class="stat-icon stat-icon-warning">≋</span>
                             </div>
                             <div class="stat-card-body">
-                                <p class="stat-value">6</p>
+                                <p class="stat-value">{{ $stats['acceptable'] }}</p>
                                 <p class="stat-caption">موظفون بتقييم مقبول</p>
                             </div>
                         </article>
@@ -73,7 +73,7 @@
                                 <span class="stat-icon stat-icon-danger">!</span>
                             </div>
                             <div class="stat-card-body">
-                                <p class="stat-value">2</p>
+                                <p class="stat-value">{{ $stats['weak'] }}</p>
                                 <p class="stat-caption">يحتاجون إلى خطة تطوير</p>
                             </div>
                         </article>
@@ -82,63 +82,42 @@
 
                 <!-- الفلاتر والإجراءات -->
                 <section class="section">
-                    <div class="performance-header">
-                        <div class="grid grid-4">
-                            <div class="form-group">
-                                <label class="form-label" for="filterPeriod">فترة التقييم</label>
-                                <select id="filterPeriod" class="form-control">
-                                    <option value="q4-2025" selected>الربع الرابع 2025</option>
-                                    <option value="q3-2025">الربع الثالث 2025</option>
-                                    <option value="q2-2025">الربع الثاني 2025</option>
-                                    <option value="q1-2025">الربع الأول 2025</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label" for="filterRating">مستوى الأداء</label>
-                                <select id="filterRating" class="form-control">
-                                    <option value="">كل المستويات</option>
-                                    <option value="excellent">ممتاز</option>
-                                    <option value="very-good">جيد جداً</option>
-                                    <option value="acceptable">مقبول</option>
-                                    <option value="weak">ضعيف</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label" for="filterDepartment">القسم</label>
-                                <select id="filterDepartment" class="form-control">
-                                    <option value="">كل الأقسام</option>
-                                    <option value="dev">تطوير البرمجيات</option>
-                                    <option value="analysis">تحليل النظم</option>
-                                    <option value="support">الدعم الفني</option>
-                                    <option value="pm">إدارة المشاريع</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label" for="filterName">بحث بالاسم</label>
-                                <input
-                                    type="text"
-                                    id="filterName"
-                                    class="form-control"
-                                    placeholder="اكتب اسم الموظف..."
-                                >
+                    <form method="GET" action="{{ route('performance') }}">
+                        <div class="performance-header">
+                            <div class="grid grid-4">
+                                <div class="form-group">
+                                    <label class="form-label" for="filterDepartment">القسم</label>
+                                    <select id="filterDepartment" name="department" class="form-control">
+                                        <option value="">كل الأقسام</option>
+                                        @foreach($departments as $dept)
+                                            <option value="{{ $dept->id }}" {{ $departmentFilter == $dept->id ? 'selected' : '' }}>
+                                                {{ $dept->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label" for="filterRating">مستوى الأداء</label>
+                                    <select id="filterRating" name="rating" class="form-control">
+                                        <option value="">كل المستويات</option>
+                                        <option value="excellent" {{ $ratingFilter == 'excellent' ? 'selected' : '' }}>ممتاز</option>
+                                        <option value="very-good" {{ $ratingFilter == 'very-good' ? 'selected' : '' }}>جيد جداً</option>
+                                        <option value="acceptable" {{ $ratingFilter == 'acceptable' ? 'selected' : '' }}>مقبول</option>
+                                        <option value="weak" {{ $ratingFilter == 'weak' ? 'selected' : '' }}>ضعيف</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label" for="filterName">بحث بالاسم</label>
+                                    <input type="text" id="filterName" name="name" value="{{ $nameFilter }}" class="form-control" placeholder="اكتب اسم الموظف...">
+                                </div>
+                                <div class="form-group d-flex align-items-end">
+                                    <button type="submit" class="btn btn-primary w-100" style="margin-top: 25px;">
+                                        بحث وتصفية
+                                    </button>
+                                </div>
                             </div>
                         </div>
-
-                        <div class="performance-actions">
-                            <button type="button" class="btn btn-primary">
-                                بدء تقييم جديد
-                            </button>
-                            <button type="button" class="btn btn-outline">
-                                تقييم جماعي
-                            </button>
-                            <button type="button" class="btn btn-outline">
-                                تصدير تقرير التقييم
-                            </button>
-                            <button type="button" class="btn btn-outline">
-                                عرض إحصائيات الأداء
-                            </button>
-                        </div>
-                    </div>
+                    </form>
                 </section>
 
                 <!-- جدول تقييم الأداء -->
@@ -146,9 +125,9 @@
                     <article class="card">
                         <header class="card-header">
                             <div class="card-header-main">
-                                <h2 class="card-title">سجل تقييمات الأداء</h2>
+                                <h2 class="card-title">سجل تقييمات الأداء بالذكاء الاصطناعي</h2>
                                 <p class="card-subtitle">
-                                    عرض تقييم الأداء لكل موظف حسب الفترة المحددة
+                                    معتمد على خوارزميات التنبؤ بالإنتاجية والتوصية بالتحسين
                                 </p>
                             </div>
                         </header>
@@ -159,169 +138,59 @@
                                         <tr>
                                             <th>الموظف</th>
                                             <th>القسم</th>
-                                            <th>فترة التقييم</th>
                                             <th>مستوى الأداء</th>
-                                            <th>نسبة الإنجاز</th>
-                                            <th>آخر تحديث</th>
+                                            <th>مستوى المهارة (AI)</th>
+                                            <th>نسبة الإنجاز (AI)</th>
                                             <th>المقيّم</th>
-                                            <th>إجراءات</th>
+                                            <th>إجراءات الإدارة</th>
                                         </tr>
                                     </thead>
                                     <tbody>
+                                        @forelse($evaluatedEmployees as $emp)
                                         <tr>
-                                            <td>محمد صالح</td>
-                                            <td>تطوير البرمجيات</td>
-                                            <td>الربع الرابع 2025</td>
+                                            <td>{{ $emp->first_name }} {{ $emp->last_name }}</td>
+                                            <td>{{ $emp->department->name ?? 'غير محدد' }}</td>
                                             <td>
-                                                <span class="badge badge-performance badge-performance-excellent">
-                                                    ممتاز
+                                                <span class="badge badge-performance badge-performance-{{ $emp->ai_evaluation['rating_class'] }}">
+                                                    {{ $emp->ai_evaluation['status_label'] }}
                                                 </span>
                                             </td>
                                             <td>
-                                                <div class="progress">
+                                                <span style="font-weight: bold; color: #4f46e5;">{{ $emp->ai_evaluation['skill_level'] }}</span>
+                                            </td>
+                                            <td style="min-width: 200px;">
+                                                <div class="progress" style="margin-bottom: 2px;">
                                                     <div class="progress-bar">
-                                                        <div class="progress-fill progress-90" data-progress="90"></div>
+                                                        <div class="progress-fill" style="width: {{ $emp->ai_evaluation['productivity_score'] }}%; background-color: {{ $emp->ai_evaluation['productivity_score'] < 50 ? '#ef4444' : ($emp->ai_evaluation['productivity_score'] < 70 ? '#f59e0b' : '#10b981') }};"></div>
                                                     </div>
-                                                    <span class="progress-value">90%</span>
+                                                    <span class="progress-value">{{ $emp->ai_evaluation['productivity_score'] }}%</span>
                                                 </div>
                                             </td>
-                                            <td>01-12-2025</td>
-                                            <td>هند محمد</td>
+                                            <td>🤖 النظام الذكي</td>
                                             <td>
                                                 <div class="action-buttons">
-                                                    <button type="button" class="btn btn-sm btn-ghost">
-                                                        عرض
-                                                    </button>
-                                                    <button type="button" class="btn btn-sm btn-outline">
-                                                        تقييم
-                                                    </button>
+                                                    <a href="{{ route('employees.evaluation', $emp->id) }}" class="btn btn-sm btn-outline" style="text-decoration: none;">
+                                                        تقرير التقييم الشامل
+                                                    </a>
                                                 </div>
                                             </td>
                                         </tr>
+                                        @empty
                                         <tr>
-                                            <td>سارة إبراهيم</td>
-                                            <td>تحليل النظم</td>
-                                            <td>الربع الرابع 2025</td>
-                                            <td>
-                                                <span class="badge badge-performance badge-performance-very-good">
-                                                    جيد جداً
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <div class="progress">
-                                                    <div class="progress-bar">
-                                                        <div class="progress-fill progress-85" data-progress="85"></div>
-                                                    </div>
-                                                    <span class="progress-value">85%</span>
-                                                </div>
-                                            </td>
-                                            <td>29-11-2025</td>
-                                            <td>مدير الموارد البشرية</td>
-                                            <td>
-                                                <div class="action-buttons">
-                                                    <button type="button" class="btn btn-sm btn-ghost">
-                                                        عرض
-                                                    </button>
-                                                    <button type="button" class="btn btn-sm btn-outline">
-                                                        تقييم
-                                                    </button>
-                                                </div>
-                                            </td>
+                                            <td colspan="7" class="text-center" style="padding: 20px;">لا يوجد بيانات للعرض. تأكد من إعدادات الفلترة.</td>
                                         </tr>
-                                        <tr>
-                                            <td>ليث عبد الله</td>
-                                            <td>الدعم الفني</td>
-                                            <td>الربع الرابع 2025</td>
-                                            <td>
-                                                <span class="badge badge-performance badge-performance-acceptable">
-                                                    مقبول
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <div class="progress">
-                                                    <div class="progress-bar">
-                                                        <div class="progress-fill progress-65" data-progress="65"></div>
-                                                    </div>
-                                                    <span class="progress-value">65%</span>
-                                                </div>
-                                            </td>
-                                            <td>28-11-2025</td>
-                                            <td>مدير الدعم الفني</td>
-                                            <td>
-                                                <div class="action-buttons">
-                                                    <button type="button" class="btn btn-sm btn-ghost">
-                                                        عرض
-                                                    </button>
-                                                    <button type="button" class="btn btn-sm btn-outline">
-                                                        تقييم
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td>خالد يوسف</td>
-                                            <td>الدعم الفني</td>
-                                            <td>الربع الرابع 2025</td>
-                                            <td>
-                                                <span class="badge badge-performance badge-performance-weak">
-                                                    ضعيف
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <div class="progress">
-                                                    <div class="progress-bar">
-                                                        <div class="progress-fill progress-45" data-progress="45"></div>
-                                                    </div>
-                                                    <span class="progress-value">45%</span>
-                                                </div>
-                                            </td>
-                                            <td>27-11-2025</td>
-                                            <td>مدير الموارد البشرية</td>
-                                            <td>
-                                                <div class="action-buttons">
-                                                    <button type="button" class="btn btn-sm btn-ghost">
-                                                        عرض
-                                                    </button>
-                                                    <button type="button" class="btn btn-sm btn-outline">
-                                                        خطة تطوير
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td>هند محمد</td>
-                                            <td>إدارة المشاريع</td>
-                                            <td>الربع الرابع 2025</td>
-                                            <td>
-                                                <span class="badge badge-performance badge-performance-very-good">
-                                                    جيد جداً
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <div class="progress">
-                                                    <div class="progress-bar">
-                                                        <div class="progress-fill progress-88" data-progress="88"></div>
-                                                    </div>
-                                                    <span class="progress-value">88%</span>
-                                                </div>
-                                            </td>
-                                            <td>30-11-2025</td>
-                                            <td>المدير التنفيذي</td>
-                                            <td>
-                                                <div class="action-buttons">
-                                                    <button type="button" class="btn btn-sm btn-ghost">
-                                                        عرض
-                                                    </button>
-                                                    <button type="button" class="btn btn-sm btn-outline">
-                                                        تقييم
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
+                                        @endforelse
                                     </tbody>
                                 </table>
                             </div>
                         </div>
+                        
+                        <!-- الترقيم -->
+                        @if($employees->hasPages())
+                        <div class="card-footer" style="padding: 15px; border-top: 1px solid #eee;">
+                            {{ $employees->withQueryString()->links() }}
+                        </div>
+                        @endif
                     </article>
                 </section>
 
